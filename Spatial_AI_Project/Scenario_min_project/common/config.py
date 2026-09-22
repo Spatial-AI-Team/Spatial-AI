@@ -28,8 +28,7 @@ USER_TEXT = "이 20초 클립을 v0.7.1 세그먼트 스키마로 태깅하라."
 CLASSIFY_MAX_TOKENS = 768
 
 # --- 프레임 샘플링 ----------------------------------------------------------
-# scene understanding 용: 전체 클립에서 시간축 균등 샘플링할 프레임 수
-NUM_FRAMES = 16
+# NUM_FRAMES는 common/thresholds.py로 이관(2026-09-21, no-literal-thresholds 훅)
 # 프레임 긴 변 최대 픽셀 (개별 전송 시, 초과하면 비율 유지 축소. 0이면 원본)
 FRAME_MAX_SIDE = 1280
 # JPEG 인코딩 품질 (1~100)
@@ -43,7 +42,7 @@ JPEG_QUALITY = 85
 TAG_MODE = "events"
 
 # --- egomotion 이벤트 검출 임계값 ---
-EVENT_DECEL_AX = -1.0     # ax(m/s^2) 감속 임계
+# EVENT_DECEL_AX는 common/thresholds.py로 이관(2026-09-21, no-literal-thresholds 훅)
 EVENT_ACCEL_AX = 1.0      # ax 가속 임계
 EVENT_STOP_SPEED = 1.5    # 정지 판정 속도(m/s)
 EVENT_TURN_YAWRATE = 0.15 # yaw 편위 후보 검출 yaw rate(rad/s) — 이후 net heading으로 분류
@@ -59,7 +58,7 @@ EVENT_CTX_SEC = 1.5       # 이벤트 중심 ±컨텍스트(초). 3s창 → 서�
 OBST_LANE_HALF = 2.5      # ego 진행로 반폭(m, |center_y|)
 OBST_AHEAD_M = 45.0       # 전방 관심 거리(m, center_x)
 OBST_MIN_SEC = 1.0        # 트랙 in-corridor 최소 지속(초)
-OBST_CUTIN_Y = 2.8        # cut-in 판정: 차로 밖(|y|>이값)에서 진입
+# OBST_CUTIN_Y는 common/thresholds.py로 이관(2026-09-21, no-literal-thresholds 훅)
 EVENT_BASELINE_MIN_SEC = 1.5  # 무이벤트 baseline 세그먼트 최소 길이(초)
 # 윈도우 길이(초)와 이동 간격(초). (WINDOW_SEC - WINDOW_STRIDE_SEC) = 겹침
 WINDOW_SEC = 6.0
@@ -80,6 +79,15 @@ MAX_IMAGES = 5
 # montage 그리드 열 수 (0이면 sqrt(N) 자동), 각 셀 긴 변 최대 픽셀
 MONTAGE_COLS = 0
 MONTAGE_CELL_MAX_SIDE = 640
+
+# --- 프레임 갤러리(신규 visionary-nvidia 100 clip, mp4 없음) image_url 시퀀스 ---
+# 2026-09-11: dataset.sample_frame_sequence()가 index.parquet 기반 jpg 갤러리에서 프레임을
+# 뽑아 image_url 여러 장으로 전송(video_url 대체). 서버 image 개수 상한 실측(2026-09-11,
+# cosmos_dj 8001): "At most 5 image(s) may be provided in one prompt"(422) — 6장 이상 요청 시
+# 하드 리젝트. 기존 individual 모드 MAX_IMAGES=5(legacy/tagger.py)와 정확히 일치, 그 값을
+# 그대로 재사용. 이 5는 서버 강제값이라 미정이 아니지만, "5장 중 어떻게 고를지"(fps·간격)는
+# 여전히 설계 변수(DV) — 조정은 여기 상수만 바꾸면 전파.
+IMAGE_SEQ_MAX_FRAMES = MAX_IMAGES
 
 # --- 데이터셋 ---------------------------------------------------------------
 # PhysicalAI-AV-curated 데이터셋 루트

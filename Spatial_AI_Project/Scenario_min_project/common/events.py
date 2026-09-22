@@ -15,7 +15,6 @@ from config import (
     CAMERA,
     DATASET_ROOT,
     EVENT_ACCEL_AX,
-    EVENT_DECEL_AX,
     EVENT_MERGE_SEC,
     EVENT_MIN_SEC,
     EVENT_STOP_SPEED,
@@ -26,10 +25,10 @@ from config import (
     EVENT_LC_LAT_MIN,
     EVENT_LC_LAT_MAX,
     OBST_AHEAD_M,
-    OBST_CUTIN_Y,
     OBST_LANE_HALF,
     OBST_MIN_SEC,
 )
+from thresholds import EVENT_DECEL_AX, OBST_CUTIN_Y
 
 # obstacle label_class → 어휘 object_type
 CLASS_MAP = {
@@ -59,17 +58,31 @@ def load_egomotion_clip(clip_id: str, camera: str = CAMERA) -> dict:
 
     import paths as P
     ego_p = P.egomotion_path(clip_id)
-    cam_p = P.camera_ts(clip_id)
-    if not ego_p.exists() or not cam_p.exists():
+    if not ego_p.exists():
         return {"ok": False, "reason": "egomotion/camera parquet 없음"}
 
-    cam = pq.read_table(cam_p, columns=["timestamp"]).to_pydict()["timestamp"]
+    # 카메라 timestamp 소스: 구 mp4 데이터셋은 camera_ts()(timestamps.parquet,
+    # 컬럼 "timestamp"), 신규 프레임 갤러리(nvidia/<clip>/)는 camera_ts() 파일 자체가
+    # 없고 index.parquet(컬럼 "timestamp_us")가 후신이다. dataset.is_frame_gallery()와
+    # 동일하게 디스크 실측(존재 여부)으로 분기 — clip_id 이름 추정 금지.
+    cam_p = P.camera_ts(clip_id)
+    if cam_p.exists():
+        cam_col = "timestamp"
+        cam_src = cam_p
+    else:
+        cam_col = "timestamp_us"
+        cam_src = P.index_path(clip_id)
+    if not cam_src.exists():
+        return {"ok": False, "reason": "egomotion/camera parquet 없음"}
+
+    cam = pq.read_table(cam_src, columns=[cam_col]).to_pydict()[cam_col]
     cam = np.array(cam)
     t0, t1 = int(cam.min()), int(cam.max())
     dur = (t1 - t0) / 1e6
 
     e = pq.read_table(ego_p).to_pydict()
-    ts = np.array(e["timestamp"])
+    ego_col = "timestamp" if "timestamp" in e else "timestamp_us"
+    ts = np.array(e[ego_col])
     m = (ts >= t0) & (ts <= t1)                      # ★ 비디오 범위로 필터
     if m.sum() < 3:
         return {"ok": False, "reason": "범위 내 egomotion 부족"}

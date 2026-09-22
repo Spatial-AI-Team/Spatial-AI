@@ -20,3 +20,8 @@ common/schema/.tokenizer_cache/
 
 # 로컬 git worktree (병행 작업용, 저장소 본체 아님)
 .claude/worktrees/
+
+# 에이전트 인수인계 계약 경로 — 생성물만 무시, cards/verification 코드는 추적
+experiments/results/
+reports/*.md
+!reports/.gitkeep
