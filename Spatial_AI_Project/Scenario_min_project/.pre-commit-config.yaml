@@ -1,0 +1,40 @@
+# 설치:  pip install pre-commit && pre-commit install
+# 수동 전체 실행:  pre-commit run --all-files
+repos:
+  - repo: local
+    hooks:
+      - id: vocab-sync
+        name: 어휘·지침서 정합성 (vocab_lint)
+        entry: python3 hooks/check_vocab_sync.py
+        language: system
+        pass_filenames: false
+      - id: no-literal-thresholds
+        name: 임계 상수 리터럴 금지
+        entry: python3 hooks/check_no_literal_thresholds.py
+        language: system
+        pass_filenames: false
+        types: [python]
+      - id: import-separation
+        name: 생산/검증 import 분리
+        entry: python3 hooks/check_import_separation.py
+        language: system
+        pass_filenames: false
+        types: [python]
+        verbose: true   # VERIFY_DIRS 미실재 시 "비활성" 안내를 통과해도 보이게(2026-09-08)
+      - id: vocab-duplication
+        name: 어휘 복제 금지
+        entry: python3 hooks/check_vocab_duplication.py
+        language: system
+        pass_filenames: false
+        types: [python]
+      - id: gold-isolation
+        name: gold 격리
+        entry: python3 hooks/check_gold_isolation.py
+        language: system
+        pass_filenames: false
+      - id: experiment-card
+        name: 실험 카드 요건
+        entry: python3 hooks/check_experiment_card.py
+        language: system
+        pass_filenames: false
+        verbose: true   # RESULTS_DIR 미실재 시 "비활성" 안내를 통과해도 보이게(2026-09-08)

@@ -1,3 +1,7 @@
+# vocab-literal-ok — _CAUSE_ENUM(구 4값 cause, v0.4 6값 전환 전까지 유지)·_OBJ_KW·_REL_KW는
+# 사후 정규화용 키워드 매핑표라 어휘 값이 dict key로 재등장한다(값 자체는 다국어 동의어
+# 목록이라 로더로 대체 불가). v0.4 cause 6값 전환은 별도 결정 사항(CLAUDE.md §4 전환 규칙) —
+# 여기서 로더로 바꾸면 미승인 상태로 조용히 6값 스키마로 전환되는 부작용이 생겨 보류.
 """v0.8 프로토타입 — Scene Description + Critical Components (자유기술 + 사후 정규화).
 
 패러다임 전환: 이산 maneuver enum 강제 대신,
@@ -11,14 +15,17 @@ import re
 import tempfile
 from pathlib import Path
 
-from config import MODEL, SEND_FPS, TEMPERATURE, WINDOW_MAX_SIDE
+from config import IMAGE_SEQ_MAX_FRAMES, MODEL, SEND_FPS, TEMPERATURE, WINDOW_MAX_SIDE
+from thresholds import LEAD_IN
 
 V08_MAX_TOKENS = 4096  # 자유기술(scene/critical/coc)은 길어 넉넉히(다객체 구조화 truncate 방지)
-from dataset import to_data_uri, video_meta, write_subclip
+from dataset import (
+    clip_duration, frame_sequence_data_uris, is_frame_gallery, to_data_uri,
+    write_subclip,
+)
+from client import visual_content
 from events import detect_events, detect_obj3d_events
 from classify073 import consolidate_episodes, _causal_agent
-
-LEAD_IN = 3.0  # 에피소드 onset 이전 접근 구간(초) 포함
 
 _ARC = {"stop": "stop", "decelerate": "decelerate", "accelerate": "accelerate",
         "turn_left": "turn left", "turn_right": "turn right", "evade": "evasive maneuver"}
@@ -118,7 +125,10 @@ V08_SCHEMA = {
         "ego_action": {"type": "string", "enum": EGO_ACTIONS}}}
 
 
-def _reason(client, uri, hint):
+# media: common.client.visual_content()가 만든 content part 리스트(video_url 1개 또는
+# image_url 여러개) — 판정 로직 불변, 입력 조립(무엇을 어떤 파트 타입으로 보내는가)만 소스별로
+# 분기(2026-09-11, 프레임 갤러리 clip 대응).
+def _reason(client, media, hint):
     r = client.chat.completions.create(
         model=MODEL, temperature=TEMPERATURE, max_tokens=V08_MAX_TOKENS,
         messages=[{"role": "user", "content": [
@@ -128,15 +138,15 @@ def _reason(client, uri, hint):
              f"(2) each critical component that influences the ego's behavior and why it is critical, "
              f"(3) the chain of causation for the ego's behavior. Use the GT arc/objects as grounding "
              f"but verify and describe from the video."},
-            {"type": "video_url", "video_url": {"url": uri}}]}])
+            *media]}])
     return (r.choices[0].message.content or "").strip()
 
 
-def _structure(client, uri, think, hint=""):
+def _structure(client, media, think, hint=""):
     import json
     msgs = [
         {"role": "user", "content": [{"type": "text", "text": "Analyze this segment."},
-                                     {"type": "video_url", "video_url": {"url": uri}}]},
+                                     *media]},
         {"role": "assistant", "content": think},
         {"role": "user", "content": "Structure the above analysis into JSON (keep free-text in English; "
          "do not over-summarize). For ego_action, classify the ego's actual maneuver from its enum based on "
@@ -218,7 +228,13 @@ def _ground_ego_action(model_ea, arc):
 def tag_clip_v08(client, path, clip_id: str) -> dict:
     result = {"clip_id": clip_id, "ok": False, "mode": "v08"}
     try:
-        meta = video_meta(path); dur = meta["duration_s"]
+        # 소스 자동판별(2026-09-11): 신규 visionary-nvidia 100 clip은 mp4가 없다(index.parquet
+        # 프레임 갤러리). `path`(P.video_path(clip_id))는 이 경우 존재하지 않는 경로를 가리키므로
+        # duration_s는 clip_duration()으로 소스에 맞게 얻고, 영상 파트는 아래 루프에서
+        # video_url(mp4 subclip)/image_url 시퀀스(갤러리)로 분기해 조립한다. 판정 로직 불변 —
+        # 입력 조립(무엇을 어떤 파트 타입으로 보내는가)만 바뀐다.
+        gallery = is_frame_gallery(clip_id)
+        dur = clip_duration(clip_id, path)["duration_s"]
         import map_lane as _M
         det = detect_events(clip_id, curvature_fn=_M.default_curvature_fn(clip_id, dur))
         if not det["ok"]:
@@ -230,16 +246,23 @@ def tag_clip_v08(client, path, clip_id: str) -> dict:
         for i, ep in enumerate(episodes, 1):
             w0 = max(0.0, ep["onset"] - LEAD_IN)   # lead-in 포함 (접근 구간)
             w1 = min(dur, ep["t1"] + 1.0)
-            sub = tmp / f"e{i}.mp4"
-            write_subclip(path, w0, w1, sub, WINDOW_MAX_SIDE, SEND_FPS)
-            uri = to_data_uri(sub); sub.unlink(missing_ok=True)
+            if gallery:
+                uris = frame_sequence_data_uris(clip_id, w0, w1, max_frames=IMAGE_SEQ_MAX_FRAMES)
+                media = visual_content("images", uris)
+            else:
+                sub = tmp / f"e{i}.mp4"
+                write_subclip(path, w0, w1, sub, WINDOW_MAX_SIDE, SEND_FPS)
+                uri = to_data_uri(sub); sub.unlink(missing_ok=True)
+                media = visual_content("video", uri)
             _, overlapping = _causal_agent(obst, ep)
             in_path = [o for o in overlapping
                        if o.get("role") in ("crossing", "preceding_vehicle")
                        and o.get("min_dist", 999) < 30]
             hint = _gt_hint(ep, in_path)              # ② GT 객체 열거+커버리지 지시
-            think = _reason(client, uri, hint)
-            v = _structure(client, uri, think, hint) or {}
+            think = _reason(client, media, hint)       # S2 raw(자유 서술)
+            v = _structure(client, media, think, hint) or {}
+            import copy
+            s3_raw = copy.deepcopy(v)                  # S3 raw(GT override 이전 스냅샷) — 관찰용, 판정에 미사용
             comps = v.get("critical_components", []) or []
             # [수정2] object_type/relation 은 GT(obj3d)만 채택. 모델 enum 은 매칭용으로만 보관
             # (모델 과채움 door_open 차단). 매칭 안 된 모델 컴포넌트는 서술만(enum null).
@@ -290,6 +313,9 @@ def tag_clip_v08(client, path, clip_id: str) -> dict:
                 "consistency": consistency, "think": think}
             rec["search_tags"] = _search_tags(rec)
             rec["flags"] = disclosure.stamp()
+            # 2026-09-09: rule/vlm 경계 관찰용 — 판정 로직 불변, 캡처만 추가(pipeline-integrator).
+            rec["_s2_raw"] = think
+            rec["_s3_raw"] = s3_raw
             recs.append(rec)
         result["records"] = recs
         result["ok"] = True

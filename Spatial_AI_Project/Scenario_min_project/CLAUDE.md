@@ -1,5 +1,8 @@
 # CLAUDE.md
-
+## Language Policy
+- 모든 응답은 한국어 또는 영어로만 작성한다.
+- 한자(漢字)나 일본어 문자(히라가나/가타카나) 혼용을 절대 금지한다.
+- 상태 메시지(대기, 완료, 계획 등 진행 보고 문구)도 예외 없이 순수 한국어만 사용한다.
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 자율주행 클립에서 **자차 거동 사건(에피소드) 메타데이터를 태깅**하고 long-tail 상황을 **추출**하는 파이프라인(KATECH VLA). VLM(NVIDIA Cosmos-Reason)은 **frozen** — 재학습하지 않고 GT(egomotion/obj3d/map)+규칙+VLM 조합 로직을 개선한다.
@@ -85,7 +88,7 @@ docker container logs <container>  # 전체형
 
 # 2. 목표 설계 (지침서 v0.4) — 미구현
 
-정본: `pipeline_design_guide_v0.4.md` > `tag_vocab_v0.4.json` > `실험계획_추론경로_260824.md`.
+정본: `docs/design/pipeline_design_guide_v0.4.md` > `common/schema/tag_vocab_v0.4.json` > `실험계획_추론경로_260824.md`(2026-09-14 확정: main `docs/experiments/experiment_design_v0.1.md`가 정본. worktree에 2026-08-24 초안이 별도로 존재했으나 사용자가 main 최종 저장본을 정본으로 확정. 경위는 `decisions/DESIGN_LOG.md`의 `[2026-09-11] 실험계획_추론경로_260824.md 실체 확인`·`[2026-09-14] experiment_design_v0.1.md 정본 확정` 항목 참고).
 충돌 시 위 순서를 따른다. 어휘 JSON을 코드에 복제하지 말고 단일 원천에서 로드한다.
 
 ## 목적 우선순위
@@ -261,3 +264,24 @@ S3 인과 귀속   VLM → 원인 집합 확정, 신뢰도
 - 임시 산출물은 `$CLAUDE_JOB_DIR/tmp`
 - 막히면 진행을 멈추고 블로커 리포트를 남긴다
 - 설계 변경은 `decisions/DESIGN_LOG`에 기록
+
+## 에이전트 위임 (`docs/design/AGENT_DESIGN.md` 정본, 2026-09-09 반영)
+
+메인 세션은 오케스트레이터다. 아래에 해당하는 요청은 직접 구현하지 않고 위임한다.
+
+```
+어휘·스키마·필드·값 집합·버전·린트                    → schema-keeper
+전이·앵커·에피소드 분할·3DOD·지도·위치·계측·후보        → rule-engineer
+프롬프트·VLM·점수화·생성·서빙·매니페스트                → vlm-engineer
+러너·인수인계 경로·Stage1↔Stage2 배선·산출물 영속화     → pipeline-integrator
+게이트·술어·역검증·채점·지표·전파율·calibration·리포트  → verifier
+스모크셋·gold·라벨링 도구·IAA·변환                     → dataset-curator
+실험·arm·브랜치·재현                                  → experiment-runner
+결정·기록·번복·외부 문서 반영                          → design-scribe
+다음에 무엇을 바꿀지·성능 정체·오류 분포 해석            → design-optimizer
+진행 불가·오류 원인 불분명·반복 실패                    → blocker-triage
+```
+
+한 요청이 생산+검증 두 축에 걸치면 분리해서 순서대로 위임한다. 위임하지 않고 메인이 직접 하는 것: 우선순위 판단, 에이전트 간 충돌 중재, 사람에게 결정 요청.
+
+**자동 사이클, 사람 승인은 끝 1곳**: task 정의 → 카드 자동등록(experiment-runner, `experiments/cards/`) → 실행·계약 경로 영속화(pipeline-integrator, `outputs/`) → 게이트+gold 채점+회귀(verifier, `experiments/results/`+`reports/`) → 변경 제안서(design-optimizer, `experiments/proposals/`) → **사람이 리포트+제안서 리뷰(유일한 결정 통로)** → 결정 기록(design-scribe, `decisions/DESIGN_LOG.md`) → 다음 사이클. 상세는 `AGENT_DESIGN.md` §6.
