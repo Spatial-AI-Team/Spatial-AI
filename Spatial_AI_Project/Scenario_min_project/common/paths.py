@@ -30,8 +30,8 @@ anno/map, anno/obj3d 둘 다 `source`="pseudo"·`reviewed`=false 전량(사람 G
 
 from pathlib import Path
 
-ROOT = "/katech/datasets/visionary"
-BASE = f"{ROOT}/unified_dataset/nvidia"
+ROOT = "/katech/datasets/visionary-nvidia"
+BASE = f"{ROOT}/nvidia"
 CAM = "camera_front_wide_120fov"
 OBJ3D_VER = "v1.15.0.0"
 MAP_VER = "v2.2.1.0"
