@@ -1,0 +1,32 @@
+# 에이전트 위임 번들 — 무결성 인덱스 (2026-09-10 재구성)
+# 재해시 사유: pipeline-integrator 신설(2026-09-09)·common/manifest.py·task_episode/run_pipeline.py·verification/·common/thresholds.py 추가 반영 + 기존 해시 전량 stale 정정
+./.claude/agents/blocker-triage.md
+./.claude/agents/dataset-curator.md
+./.claude/agents/design-optimizer.md
+./.claude/agents/design-scribe.md
+./.claude/agents/experiment-runner.md
+./.claude/agents/pipeline-integrator.md
+./.claude/agents/rule-engineer.md
+./.claude/agents/schema-keeper.md
+./.claude/agents/verifier.md
+./.claude/agents/vlm-engineer.md
+./.pre-commit-config.yaml
+./CLAUDE.md
+./MANIFEST.txt
+./common/manifest.py
+./common/schema/tag_vocab_v0.4.json
+./common/schema/Vocab_lint.py
+./common/thresholds.py
+./docs/design/AGENT_DESIGN.md
+./docs/design/pipeline_design_guide_v0.4.md
+./hooks/check_experiment_card.py
+./hooks/check_gold_isolation.py
+./hooks/check_import_separation.py
+./hooks/check_no_literal_thresholds.py
+./hooks/check_vocab_duplication.py
+./hooks/check_vocab_sync.py
+./hooks/hook_utils.py
+./task_episode/run_pipeline.py
+./verification/gate.py
+./verification/report.py
+./verification/score_gold.py

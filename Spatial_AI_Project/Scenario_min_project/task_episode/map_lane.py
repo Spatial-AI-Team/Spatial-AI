@@ -1,8 +1,15 @@
 # -*- coding: utf-8 -*-
 """map-lane 모듈 (2차 metadata labeling용).
 
-visionary map의 'centerlines' 필드는 실제로 **차선 경계선(line)** 이다(명칭 오류).
-경계선을 y로 정렬하고 y=0을 사이에 둔 인접쌍을 ego 차로로 본다.
+visionary map(v2.2.1.0, native v1 레이아웃)의 'divider_polylines' 필드는 실제로
+**차선 경계선(line)** 이다(명칭이 아니라 뜻 자체가 그러함 — divider=노면표시 그 자체,
+차선 중심선 아님). 경계선을 y로 정렬하고 y=0을 사이에 둔 인접쌍을 ego 차로로 본다.
+
+2026-09-11: 구 v1.1.0 shared-column 레이아웃(centerlines/lane_ids/lane_type/area_points)
+→ 신규 v2.2.1.0 native v1(divider_polylines/divider_ids/divider_classes/area_polygons)
+컬럼명 전환. 이 모듈은 frames.parquet의 divider_polylines 만 읽는다(area_* 는 미사용,
+2026-09-11 확인 — 교차로/횡단보도 판정에 area 를 쓰게 되면 area_polygons 로 읽을 것,
+area_points 아님).
 
 - map_valid(clip): ego 차로가 신뢰 검출되는 clip인지 게이트
     조건: 경계쌍 존재 · 폭 ∈ [2.5,4.5]m · 프레임 ≥60% 안정
@@ -36,7 +43,7 @@ def _lines(clip_id):
     if not mf.exists():
         _cache[clip_id] = None
         return None
-    d = pq.read_table(mf, columns=["centerlines"]).to_pydict()["centerlines"]
+    d = pq.read_table(mf, columns=["divider_polylines"]).to_pydict()["divider_polylines"]
     frames = []
     for fr in d:
         lns = []
@@ -140,7 +147,7 @@ def lane_crossing_count(clip_id, t0, t1, dur, x=REF_X):
     분류)에는 아직 미사용(2026-09-08, ego_action 2축 분리 작업 — 사람 리뷰용 보조 신호).
 
     프레임별 x지점 경계선 중 y<=0(ego 기준 우측) 개수를 ego의 "차로 순번" 근사로 쓴다
-    (개별 경계선은 lane_ids가 프레임 로컬 인덱스라 프레임 간 ID 추적 불가 — 순번 값
+    (개별 경계선은 divider_ids가 프레임 로컬 인덱스라 프레임 간 ID 추적 불가 — 순번 값
     자체를 신호로 씀). 이 순번이 프레임 간 바뀐 횟수를 반환. map_valid 아니면 None
     (호출측이 lane_crossing_source=none으로 강등, curvature_fn과 동일 패턴).
     """

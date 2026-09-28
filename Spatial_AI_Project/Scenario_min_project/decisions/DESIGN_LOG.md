@@ -4,6 +4,605 @@
 
 ---
 
+## [2026-09-21] 고속 차선변경 미검출 — common/events.py 요레이트 게이트·측방변위 적분창 결함 (확인·기록만, 미수정)
+> **Task**: multi
+
+**배경 — 사용자 제기(물리 계산)**: 사용자가 Stage1(`task_selection`)의 lane_change 검출에
+대해 차선변경의 물리량을 직접 계산해 의문을 제기했다.
+
+| 케이스 | 조건 | 최대 heading 편위 | 피크 요레이트 |
+|---|---|---|---|
+| 도심 | 10 m/s, 3.5 m를 3초에 | 약 13° | 약 0.15 rad/s |
+| 고속 | 25 m/s, 3.5 m를 4초에 | 약 4° | 약 0.035 rad/s |
+
+제기된 우려 3가지: ① 고속 차선변경은 후보 구간 자체가 안 만들어진다 ② 도심도 검출이
+불안정하다 ③ 측방변위 적분창이 좁아 하한(1.8 m)을 못 채운다.
+
+이번 세션에서 코드를 직접 대조한 결과 **세 우려 모두 확정**됐다.
+
+### 발견 1 — Track1/Track2/Stage1이 전부 같은 검출 코드를 공유한다
+`common/events.py`의 `detect_events()`를 Stage1(`task_selection/selection.py:35`,
+`task_selection/folder_selection.py:47,139`)과 Stage2(Track1 `task_episode/tag_v08.py:236`,
+Track2 `task_episode/candidates.py`, 러너 `task_episode/run_pipeline.py:86`)가 **동일하게
+호출**한다. 호출부 차이는 `curvature_fn` 인자뿐이고(Stage1은 `None`=map 미사용, Stage2는
+map 기반 잔차보정 클로저), **yaw_rate 후보 게이트와 측방변위 적분창 로직은 완전히 동일**
+하다. 이 사실은 `common/events.py:139-141` 주석("미지정(기본값, Stage1/task_selection이
+쓰는 경로)이면 raw heading 그대로 … Stage2/task_episode 호출부만 `map_lane.
+road_curvature_over`를 감싼 클로저를 넘겨 잔차 보정을 켠다")과
+`docs/design/pipeline_design_guide_v0.4.md:180`("`common/events.py::detect_events()`는
+Stage1·Stage2가 공유하는 map-free 함수")에 이미 명시돼 있다.
+
+→ **이 결함은 Track1 또는 Track2 개별 문제가 아니라 공용 앵커 검출 인프라의 결함이다.**
+곡률보정(`curvature_fn`)은 후보 구간이 만들어진 뒤의 heading **잔차 분류**에만 개입하므로
+이 결함을 완화하지 않는다.
+
+### 발견 2 — 실제 임계값 (`common/config.py:49-56`)
+| 상수 | 값 | 역할 |
+|---|---|---|
+| `EVENT_TURN_YAWRATE` | `0.15` | 후보 구간 게이트 — `abs(yaw_rate) >` 이 값이 연속 유지돼야 후보 생성 |
+| `EVENT_MIN_SEC` | `0.4` | 이벤트 최소 지속(초) |
+| `EVENT_LC_HEADING_MAX` | `22.0` | 차선변경 net heading 상한(deg) |
+| `EVENT_LC_LAT_MIN` | `1.8` | 차선변경 측방변위 하한(m) |
+| `EVENT_LC_LAT_MAX` | `6.0` | 차선변경 측방변위 상한(m) |
+
+판정 코드 `common/events.py:170-193` 요지:
+```python
+for i0, i1, a, b in _runs(np.abs(yr) > EVENT_TURN_YAWRATE, t, EVENT_MIN_SEC):   # 170
+    ...
+    lat = trapezoid(speed[i0:i1+1] * sin(yaw[i0:i1+1] - yaw[i0]), t[i0:i1+1])   # 175-177
+    ...
+    elif amag <= EVENT_LC_HEADING_MAX and EVENT_LC_LAT_MIN <= abs(lat) <= EVENT_LC_LAT_MAX:
+        kind = "lane_change_left" if lat > 0 else "lane_change_right"           # 190-191
+    else:
+        continue                                                                # 193
+```
+
+### 발견 3 — 세 우려의 확정 근거 (성격이 서로 다르므로 구분한다)
+
+**3-1. 고속 차선변경 = 확정된 미검출 (구조적 불가, 확률 문제 아님)**
+`_runs()`(`common/events.py:104-118`)는 `abs(yaw_rate) > 0.15`가 연속 `EVENT_MIN_SEC=0.4`초
+이상 유지돼야 후보 구간을 만든다. 고속 피크 요레이트 0.035 rad/s는 임계값의 **1/4 수준**
+이라 mask가 **단 한 프레임도 True가 되지 않는다** → `_runs` 반환값이 빈 리스트 → 170행
+루프 본문이 한 번도 실행되지 않음 → lane_change/turn 분기(188-193행) **진입 자체가 불가능**
+하다. 측방변위·heading 판정이 아무리 옳아도 그 코드에 도달하지 않는다.
+
+**3-2. 도심 차선변경 = 경계 불안정 확정 (임계값 설계상 필연)**
+도심 피크 요레이트(약 0.15)가 게이트 임계값(`0.15`)과 **정확히 같다**. 조건이 `>`(초과)
+이므로 피크가 임계값에 닿기만 하는 프로파일은 mask가 True가 되지 않고, 넘더라도 피크
+근방의 짧은 구간만 True가 돼 그 지속시간이 `EVENT_MIN_SEC=0.4`초를 못 채울 가능성이 높다.
+**검출 여부가 노이즈·샘플링에 좌우되는 경계 조건**이라는 뜻이며, 이는 실측 편차가 아니라
+임계값 설계에서 필연적으로 따라오는 불안정도다.
+
+**3-3. 측방변위 절단 확정 (게이트를 통과해도 값이 과소산출)**
+`lat` 적분(175-177행)이 `_runs`가 반환한 **같은 `i0:i1+1` 구간** — 즉 요레이트가 임계값을
+넘는 좁은 구간 — 에서만 이뤄진다. 차선변경의 진입·이탈 완만한 구간(요레이트는 낮지만
+실제 측방 이동은 계속되는 구간)은 **적분 범위 밖이라 통째로 빠진다**. 실제 물리 측방변위가
+3.5 m여도 좁은 창에서 적분한 `lat`이 하한 `EVENT_LC_LAT_MIN=1.8` m에 못 미치면 190행 조건이
+거짓이 되고 193행 `continue`로 **조용히 버려진다**. 3-1·3-2를 통과한 도심 케이스조차 여기서
+다시 탈락할 수 있다 — 세 결함은 직렬로 누적된다.
+
+**로그 부재로 관측이 막혀 있다**: 193행 `continue`는 탈락 사실을 아무 데도 남기지 않는다.
+위 `[2026-09-08] S0 단계 검증 clip 50개 추출` 항목의 "남겨둔 한계"(`decisions/
+DESIGN_LOG.md:682-683`, 이 항목 삽입 전 기준)가 이미 "지침서 §2.3.1이 요구하는 '필터 통과
+직전 탈락 경계 사례' 로그는 `detect_events()`가 중간 후보를 노출하지 않아 커버 불가 —
+필요해지면 `events.py` 자체 수정 필요"로 기록해둔 것과 **같은 지점**이다. 그래서 이 결함은
+지금까지 산출물 통계로 드러나지 않았다 — 미검출이 "이벤트 없음"과 구별되지 않는다.
+
+### 판정 — 이번 사이클에서 수정하지 않는다
+사용자 지시는 **"확인, 기록까지만"**이다. 따라서 이번 사이클에서 **코드·임계값을 변경하지
+않는다**. `common/events.py`·`common/config.py`·`common/thresholds.py` 무변경, 파이프라인
+재실행 없음. 이 항목은 결정이 아니라 **확정된 사실의 등재**이며, 되돌린 결정이 없으므로
+`vocab_lint.py`의 `RETIRED` 등록 요청도 **없다**(폐기된 표현이 발생하지 않았다).
+
+### 기존 결정과의 충돌 (판정하지 않고 드러내기만 한다)
+`CLAUDE.md` §2 "전이 검출 4중 필터" 1번은 **"횡방향은 누적 방위 변화량(순간 요레이트
+아님)"**으로 크기 필터를 규정한다. 그러나 현행 `common/events.py:170`의 후보 게이트는
+**순간 요레이트**(`np.abs(yr) > 0.15`)다. 즉 현행 구현은 목표 설계 §2의 필터 1과 어긋나
+있고, 발견 3-1의 미검출은 바로 이 어긋남의 직접적 귀결이다. 목표 설계 쪽이 이 결함을 이미
+구조적으로 배제하고 있다는 점에서 **§2와 충돌하는 것은 현행 코드**이며 §2 변경 필요는 없다.
+**판정 주체**: 사람 또는 rule-engineer(전이·앵커 담당).
+
+또한 §3 불변 규칙의 "전이 검출 = CAN 규칙 확정"은 **유효하게 유지된다** — 이 결함은 검출을
+규칙에서 모델로 옮기라는 근거가 아니라 **CAN 규칙 자체의 커버리지 구멍**이다. 앵커 비오염
+원칙(설계 원칙 1)은 그대로 적용되며, 재설계도 규칙 영역 안에서 이뤄져야 한다.
+
+### 미결 등재 (신규)
+**고속 차선변경 검출 방법 재설계 필요.** 검토 후보:
+- 요레이트 게이트 대신 **GPS/pose 경로 기반 측방변위 직접 계산** 방식
+- 게이트 임계값을 **속도 적응형**으로 변경(요레이트 임계를 속도의 함수로)
+- 적분창을 요레이트 게이트 구간이 아니라 **거동 완료·안정화 시점까지** 확장(§2 "시간창은
+  거동 완료·안정화 시점까지 포함" 규정과 정합)
+- 선행 요건: 193행 탈락 사례 로그 확보 — 그 전에는 변경 전후 비교의 분모가 없다
+
+**결정 주체**: 사람(착수 승인) → rule-engineer(설계·구현). **선행 조건**: ① 사용자의 착수
+판정 ② 경계 탈락 로그로 현행 미검출률 실측 ③ 변경은 Stage1·Stage2 **양쪽에 동시 파급**되므로
+§4 전환 원칙("1 브랜치 = 1 변경 축")에 따라 단독 변경축으로 분리. **착수 여부는 사람 판정
+대기.**
+
+### 영향
+문서만 수정: `decisions/DESIGN_LOG.md`(이 항목 추가). 코드·스키마·임계값 변경 없음.
+파이프라인 재실행 없음. 산출물 무변경. 커밋하지 않음(워킹트리 유지).
+
+---
+
+## [2026-09-14] `experiment_design_v0.1.md` 정본 확정 — main 최종 저장본(`실험 설계 정본 v0.1`) 채택, worktree 5-arm 초안은 폐기본
+> **Task**: multi
+
+**배경**: 바로 아래 `[2026-09-11] 실험계획_추론경로_260824.md 실체 확인` 항목이 "worktree loose
+파일을 내용 무변경으로 복사"라고 기록했으나 사실과 다르다. 같은 경로 `docs/experiments/
+experiment_design_v0.1.md`를 두고 내용이 다른 두 판본이 있었다 — worktree 원본(제목 `실험 계획 —
+추론 경로 및 모델 대조군 (2026-08-24)`, 5-arm)과 main 현재판(제목 `실험 설계 정본 v0.1`, A1~A4
+4-arm, 18:38 저장). 이번 세션 조사에서 main 현재판은 에이전트가 임의로 개정한 것이 아니라
+**사용자가 IDE에서 직접 편집·저장한 최종본**임이 확인됐다.
+
+**결정(사용자, 2026-09-14)**: "가장 최근에 저장했던 파일로 진행" — main 현재판
+(`실험 설계 정본 v0.1`)을 **정본으로 확정**한다. worktree의 2026-08-24 초안은 폐기본이며
+되살리지 않는다(파일 자체는 삭제·이동 없이 그대로 둔다).
+
+**되돌린 결정** (worktree 초안 → 정본에서 뒤집힘)
+
+| 축 | worktree 초안(2026-08-24, 폐기) | 정본 `실험 설계 정본 v0.1`(채택) |
+|---|---|---|
+| arm 개수 | ①~⑤ 5개 | A1~A4 4개 |
+| 기준선 | ① 현행 제약 디코딩 = arm 기준선 | **기준선 자격 부정** — CoT 미통제라 재현되지 않음. arm 비교에서 제외하고 보고용 1회 측정만(§A.5) |
+| 재프리필 | ③ 생성+재프리필을 **arm으로** 취급 | **arm 아님** — A3의 후처리 옵션으로 강등(§A.4). 라벨은 안 바뀌고 확신도·엔트로피만 얻음 |
+| 실험 C | "선행 판정 필요 — §2.2 상충, A1/A2/A3 중 선택 후 확정"(미결) | **상충 판정 완료** — GT 3-way 확정, all-after는 **반증 arm**. GT 전달 형식(좌표 텍스트/영상 오버레이/채널 분리) 부속 확인 추가 |
+| 실험 D 대조군 | `Qwen3-VL` 명시 | 모델명 제거 — "동일 아키텍처 계열 base 모델" |
+| 구현 요구 | 없음 | §A.7 신설 — 필수 스위치 5개(`inference_path`·`scoring_method`·`cot_mode`·`conditioning`·`reprefill_enabled`) + 점수화 주의 5항 + 재현성 요구 |
+
+- 정본의 실험 C 판정은 `D-2026-08-24-05`(GT 3-way 확정)와 정합한다 — 충돌 없음.
+- 기각된 표현: **`현행 제약 디코딩 = 기준선 arm` 기각**(기준선 자격 없음 — 보고용 측정으로만 잔존) /
+  **`재프리필 arm` 기각**(A3 후처리 옵션으로 잔존). 두 표현 모두 문서·프롬프트에서 다시 쓰지 않는다.
+
+**RETIRED 등록 요청**: 위 두 표현을 `vocab_lint.py`의 `RETIRED`에 등록하도록 schema-keeper에 요청
+(`"현행 제약 디코딩 = 기준선 arm"`, `"재프리필 arm"`). design-scribe는 코드·스키마를 직접 고치지
+않으므로 **등록 완료 여부는 schema-keeper 회신으로 확인**한다.
+
+**미결 갱신**: 직전 계획에서 열어둔 "worktree 판을 폐기본으로 확정할지, 두 판을 별도 파일로
+병존시킬지"는 **해소됨** — main 현재판(정본 v0.1)으로 확정, 사용자 결정(2026-09-14).
+
+**충돌 확인(신규, 판정 요청)**: 정본 §A.7 스위치 표의 `conditioning` 기본값은 **`weak`**인데,
+`CLAUDE.md` §2 "설정으로 열어둘 것" 표의 조건화 강도 기본값은 **`strong`**이다. 같은 스위치의
+기본값이 두 정본 문서에서 어긋난다. 이 항목이 없으면 실험 A의 A2↔A4 대조가 어느 쪽을 기준
+조건으로 잡았는지 재현할 수 없다. **판정 주체**: 사람 또는 experiment-runner. **선행 조건**:
+실험 A의 A2↔A4 결과(조건화 강도의 일관성 이득 vs 오류 전파). 이 항목은 기록만 하고 판정하지 않는다.
+그 외 축(`scoring_method` 기본 `sequence`, 추론 경로 어휘 로드)은 CLAUDE.md §2와 일치한다.
+
+### 영향
+수정: `decisions/DESIGN_LOG.md`(이 항목 추가 + 아래 `[2026-09-11]` 항목의 사실관계 정정),
+`CLAUDE.md:91`(각주 문구만 — 정본 우선순위 서술과 `실험계획_추론경로_260824.md` 참조 표기는 무변경).
+`docs/experiments/experiment_design_v0.1.md`는 무변경. 코드·스키마 변경 없음. 커밋하지 않음.
+
+---
+
+## [2026-09-11] `실험계획_추론경로_260824.md` 실체 확인 — main에 `docs/experiments/experiment_design_v0.1.md`로 반영
+> **Task**: multi
+
+**배경**: 바로 아래 `[2026-09-11] 파이프라인 현재 문제점 종합 목록` 항목의 15번("실체 부재",
+`CLAUDE.md:91` 각주 처리만 완료)과 `[2026-08-31] 재현성 불일치 조사` 항목의 §6("근거 추적
+불가")이, CLAUDE.md §2 정본 우선순위 3번째 문서 `실험계획_추론경로_260824.md`가 main
+워킹트리 어디에도 없다고 기록해뒀다. 지난 세션 각주는 "worktree
+`.claude/worktrees/selection-dist/docs/experiments/experiment_design_v0.1.md`가 같은
+내용으로 추정되나 파일명이 달라 동일 문서 여부는 미확인"으로 열어둔 상태였다. 이번
+세션에서 해당 worktree 파일을 직접 읽어 제목이 "실험 계획 — 추론 경로 및 모델 대조군
+(2026-08-24)"로 **정확히 일치**함을 확인했다. 그 파일은 worktree 브랜치에도 커밋되지
+않은 loose 파일이었다.
+
+**변경**:
+- main `docs/experiments/experiment_design_v0.1.md`를 신설. **[2026-09-14 정정]** 최초
+  생성은 worktree 판(2026-08-24, 5-arm) 내용으로 했으나, **사용자가 이후 main 파일을 직접
+  편집·저장**해 최종본은 `실험 설계 정본 v0.1`(A1~A4 4-arm)이다. 따라서 이 항목의 최초
+  서술 "내용 무변경으로 복사(`diff` 결과 바이트 동일 확인)"는 **사실과 달라 철회한다** —
+  두 판본은 내용이 다르다. 사용자가 이 최종 저장본을 정본으로 확정(2026-09-14, 위
+  `[2026-09-14] experiment_design_v0.1.md 정본 확정` 항목 참고). 파일명은
+  `decisions/DESIGN_LOG.md:731`(구 번호, 이 항목 삽입 전 기준)이 이미 이 이름으로
+  지칭하고 있어 그대로 유지 — 정본 우선순위 서술의 `실험계획_추론경로_260824.md`라는
+  참조 표기 자체는 CLAUDE.md에서 안 바꾼다(그 표기는 여전히 "정본으로 지목하는 문서"의
+  이름이고, 이 문서가 그 실체임을 각주가 가리킨다)
+- `CLAUDE.md:91` 각주를 "저장소 어디에도 실체 없음 — 부재 ... worktree ... 추정되나
+  파일명이 달라 동일 문서 여부는 미확인"에서 "확인 완료 — `docs/experiments/
+  experiment_design_v0.1.md`로 메인에 반영됨(2026-09-11)"으로 정정.
+  **[2026-09-14 재정정]** 이 각주는 "부재" 서술과 "확인 완료" 서술이 한 줄에 공존해
+  모순이었다. 아래 B 항으로 모순 문구를 제거하고 정본 확정 사실로 대체함
+- worktree 원본은 그대로 둠(삭제·이동 없음)
+
+**이 정정이 해소하지 않는 것**: `[2026-08-31] 재현성 불일치 조사` §6 "근거 추적 불가"의
+본체 — `versioning.reproducibility_params` 5군을 기록하는 코드가 아직 없다는 사실,
+그리고 이 실험계획 문서 자체가 "기존에 확인된 5-vote 비결정성"의 **원 관측**(날짜·수치·
+해시 비교)을 담고 있지 않다는 사실 — 은 **미해소로 유지**된다. 문서 실체를 확인했다고
+해서 그 안에 없는 실측 근거가 생기지는 않는다. 실제로 이 문서(실험 A~D)는 지침서 본문에
+넣지 않은 **미검증 가설의 실험 설계**이지, 과거 관측 기록이 아니다 — §6이 찾던 것과는
+다른 종류의 문서라는 점도 이번에 내용을 대조해 확인했다.
+
+**미결 갱신**: `[2026-09-11] 파이프라인 현재 문제점 종합 목록` 15번("실체 부재")은 이
+항목으로 **해소됨**. `[2026-08-31]` §6 "근거 추적 불가"는 **미해소 유지**(위 근거).
+
+**충돌 확인**: 새 설계 결정 아님 — 기존 미결 항목의 사실관계(문서 소재) 확인·반영이며,
+기존 결정과 충돌하지 않는다.
+
+### 영향
+신규: `docs/experiments/experiment_design_v0.1.md`. **[2026-09-14 정정] "worktree loose
+파일과 바이트 동일"은 사실과 다르므로 삭제** — 현재 내용은 사용자 최종 저장본
+`실험 설계 정본 v0.1`이다.
+수정: `CLAUDE.md:91`(각주만, 정본 우선순위 서술 자체는 무변경), `decisions/DESIGN_LOG.md`
+(이 항목 추가). 코드·스키마 변경 없음. 커밋하지 않음(워킹트리 유지).
+
+---
+
+## [2026-09-11] exp 네임스페이스 분리 구현 — outputs/episodes·labels 사이클 간 덮어쓰기 방지
+> **Task**: multi
+
+**배경**: 바로 아래 `[2026-09-11] 파이프라인 현재 문제점 종합 목록` 항목의 1번
+(`outputs/episodes/`·`outputs/labels/` 비영속화, exp 네임스페이스 없음 — 재실행마다 이전
+사이클의 클립별 중간 산출물이 덮어써지는 문제, C001b·C001c 산출물을 "C001 결과"로
+오귀속한 실측 사례로 발견)에 대해 사용자가 처리 착수를 승인해 오늘(2026-09-11) 구현을
+완료했다.
+
+### 목표 경로 구조
+- `outputs/episodes/<clip>.json` → `outputs/episodes/<exp>/<clip>.json`
+- `outputs/labels/<clip>/{s2,s3,final}.json` → `outputs/labels/<exp>/<clip>/{s2,s3,final}.json`
+
+### 생산 측 (pipeline-integrator)
+- `task_episode/run_pipeline.py`: `audit_clip()`(66행 함수 정의)에 `exp` 파라미터 추가,
+  경로 조립 2곳에 `exp` 삽입 — episodes 기록(140행:
+  `_write_json(ROOT / "outputs" / "episodes" / exp / f"{clip_id}.json", episodes_doc)`),
+  labels 기록(152~154행: s2/s3/final 3개 경로 전부 `outputs/labels/exp/clip_id/...`로 조립).
+  모듈 docstring(10~19행)·실행 안내(20행)·요약 출력 문구(256행)도 새 경로로 갱신
+- `task_episode/render_c001_overlay.py`: `--exp` 필수 인자 추가(86행, `verification/gate.py`와
+  동일 패턴), `main()`에서 `labels_dir = ROOT / "outputs" / "labels" / args.exp`(91행)로
+  지역 계산 — 이전에 있던 `LABELS_DIR` 모듈 상수 하드코딩 제거
+- `docs/design/AGENT_DESIGN.md` §3 표(68~69행, `outputs/episodes/<exp>/<clip>.json`·
+  `outputs/labels/<exp>/<clip>/{s2,s3,final}.json`로 갱신), `.claude/agents/
+  pipeline-integrator.md`의 "계약 경로 영속화" 서술(12행)도 같은 방식으로 갱신
+- 검증: `--set gold50 --exp NSTEST --n 2 --workers 2` 스모크 실행으로 새 경로에 정상 생성
+  확인 + 기존 flat 경로(`outputs/episodes/*.json` 등)는 이 실행으로 전혀 안 건드려짐을 확인
+  → 검증 후 NSTEST 잔여물 삭제
+
+### 검증 측 (verifier)
+- `verification/gate.py`: `_load()`(38~43행)·`gate_clip()`(59행)에 `exp` 파라미터 추가,
+  경로 조립에 삽입(39~40행: `ROOT / "outputs" / "episodes" / exp / f"{clip_id}.json"`·
+  `ROOT / "outputs" / "labels" / exp / clip_id / "final.json"`). 판정 로직(reachable·
+  direction_consistent 계산 등, 76~118행)은 무변경 — `main()`의 `--exp` 인자(128행)로 받아
+  `gate_clip(cid, args.exp)`(135행)에 전달만 함
+- `verification/score_gold.py`: `_predicted_episodes()`(42~54행)에 `exp` 파라미터 추가,
+  경로(43행: `ROOT / "outputs" / "episodes" / exp / f"{clip_id}.json"`)에 삽입. 채점 로직
+  (`_match`(57행)·`score_clip`(69행) 등)은 무변경 — `main()`의 `--exp` 인자(105행)로 받음
+- `verification/report.py`: `_contract_table()`(42행)·`_completion_coverage()`(82행)에
+  `exp` 파라미터 추가, 표 라벨 문자열(45~52행 계약 경로 행)도 실제 경로(`outputs/episodes/
+  <exp>/...`·`outputs/labels/<exp>/...`)와 일치하도록 정정. 집계 로직은 무변경
+- 검증: `--set gold50 --exp NSVERIFY --n 3 --workers 2`로 신선 데이터 생성 →
+  `gate.py --exp NSVERIFY`·`score_gold.py --exp NSVERIFY`·`report.py --exp NSVERIFY` 3개
+  전부 새 경로에서 정상 동작 확인(§1 계약 경로 표 카운트 3/3 정상 산출) → 검증 후
+  NSVERIFY 잔여물 삭제
+
+### 기존 데이터 처리
+- 기존 flat 데이터(`outputs/episodes/*.json` 50개, `outputs/labels/*/` 50개 — C001b/C001c가
+  혼재해서 쓴 것)는 **삭제하지 않고 그대로 둠**. 이 변경 이후 어떤 스크립트도 이 경로를
+  읽거나 쓰지 않으므로 고아 파일로 남는다. 삭제 여부는 이번 작업 범위 밖, 사람 판정 대기
+  상태 유지
+- **한계**: 이 변경은 향후 재실행부터 데이터 소실을 막을 뿐, 이미 소실된 원본 C001의
+  클립별 중간 산출물(9/9 15:29~15:37 판정 원문)은 복구되지 않는다
+
+### 영향
+수정: `task_episode/run_pipeline.py`·`task_episode/render_c001_overlay.py`·
+`verification/gate.py`·`verification/score_gold.py`·`verification/report.py`(코드 5개
+파일, 위 요약 참고) + `docs/design/AGENT_DESIGN.md`·`.claude/agents/pipeline-integrator.md`
+(문서 2개). 판정 로직(게이트 5술어·gold 매칭·리포트 집계)은 전부 무변경 — 경로 조립부에
+`exp` 인자만 추가. 커밋하지 않음(워킹트리 유지).
+
+---
+
+## [2026-09-11] 파이프라인 현재 문제점 종합 목록 (우선순위순)
+> **Task**: multi
+
+**배경**: 2026-09-09~10 사이클(C001) 완료 판정 확정 이후, 사용자가 C001 결과를 오버레이
+영상으로 직접 확인하는 과정에서 신규 구조적 결함을 발견했다. "C001 결과"라며 렌더링한
+오버레이 영상 3개 중 2개는 C001b, 1개는 C001c 산출물이었다 — mtime으로 확인:
+`outputs/labels/f1ee5309-.../final.json`은 17:33:53(C001b 실행창), `outputs/labels/
+0368ee92-.../final.json`은 17:36:37(C001c 실행창), `outputs/labels/a0a0a9c2-.../
+final.json`은 17:32:27(C001b 실행창). 원본 C001은 9/9 15:29~15:37에 끝났으므로 셋 다
+원본이 아니다. 원인은 `outputs/episodes/`·`outputs/labels/`가 `--exp` 인자와 무관하게
+항상 같은 경로에 쓰여, 재실행(C001b·C001c)마다 이전 사이클의 클립별 중간 산출물을
+덮어쓰기 때문이다. 이 신규 발견을 계기로, 현재 파악된 전체 문제 15개를 우선순위순으로
+한 자리에 모아 기록한다. 이하 2~13·15번은 이미 2026-09-09 또는 2026-09-10 항목에
+상세 기록돼 있으므로 중복 서술하지 않고 링크만 건다. 1번(신규)과 14번(이번에 처음 등재)만
+근거를 풀어 쓴다.
+
+### 15개 항목
+
+1. **`outputs/episodes/`·`outputs/labels/` 비영속화(exp 네임스페이스 없음)** — 신규
+   (2026-09-11 발견), 최우선. `task_episode/run_pipeline.py:139`(`outputs/episodes/
+   <clip>.json` 기록)와 `:151-153`(`outputs/labels/<clip>/{s2,s3,final}.json` 기록)가
+   `--exp` 인자와 무관하게 항상 같은 경로에 쓴다(직접 읽어 재확인 — 경로 리터럴에 `exp`
+   변수가 전혀 개입하지 않음). 반면 `experiments/results/<exp>/`(report.json·gate 결과·
+   gold_score·manifest.json)만 `exp` 문자열로 네임스페이스돼 있다(`main()`의
+   `experiments/results/{exp}/` 경로 조립부 참고). 그 결과 재실행마다 이전 사이클의
+   클립별 중간 산출물(에피소드 후보 전량, S2/S3 raw, final 결정)이 소실되고, 남는 건
+   집계 리포트뿐이다 — 위 배경에서 설명한 오버레이 영상 오귀속 사례가 그 직접적 증거다.
+   §2 "산출물에 반드시 남길 것 — 중간 산출물(S2 출력) 영속화, 후보 집합 전체 보존"
+   설계 원칙이 **사이클 간에는 깨진다**(단일 사이클 내에서는 지켜짐 — S2/S3 분리, 후보
+   전량 보존 자체는 정상). `experiments/results/<exp>/`만 보고 "이 사이클 결과"라고
+   믿을 수 있는 것은 집계 수치뿐이고, 클립 단위로 "그 사이클에 실제로 무엇이 나왔는지"
+   재구성할 방법이 현재 코드에는 없다. 처리 착수 여부는 사람 판정 대기(미결로도 등재).
+
+2. Track1 `cause` 값 재현 불안정(6/50, `TEMPERATURE=0`인데도 흔들림) —
+   2026-09-10 항목(§재현성 2회 대조) 참고.
+
+3. 물리 게이트 실효 커버리지 2/5, `reachable` fail 32/60(53%) — 2026-09-09 항목(§물리
+   게이트가 신규 발견을 냈다) 참고. DV-7(`cause_source`)로 해소 예정 — 2026-09-10 항목
+   (§DV-7 채택 결정)의 채택 결정도 함께 참고.
+
+4. `ERR-ATTRIB`(인과귀속) 채점 불가 — gold.json에 cause 필드 없음 — 2026-09-09 항목
+   (§변경, `verification/` 신설 절) 참고. 근거 필드는 `verification/score_gold.py:144`의
+   `err_attrib_note`("ERR-ATTRIB(S3 인과귀속) 채점 불가 — gold.json에 cause 필드 없음
+   (스키마 갭)").
+
+5. 무기록 fallback 잔존 — map_valid=false 33/50, `fallback_path` 플래그 미기록(강제규칙
+   4 위반) — 2026-09-09 항목(§무기록 fallback 잔존 확인) 참고.
+
+6. precision 하한만 측정 가능(0.144), Phase D(완전라벨 gold) 미구현 — 2026-09-09 항목
+   (§gold 채점이 기존 문서 수치를 독립 재현) 참고.
+
+7. vocab v0.4 전환 미착수 — 목표 필드 9개 0/60, cause 4→6값 미전환 — 2026-09-09 항목
+   (§목표 완수도) 참고.
+
+8. pre-commit 훅 2개 구조적 결함(`check_import_separation`, `check_experiment_card`) —
+   2026-09-10 항목(§pre-commit 6훅 전수 판정, 신규 발견 2건) 참고.
+
+9. `task_episode/tag_v08.py` 기존 부채(임계 리터럴 `LEAD_IN=3.0`, 어휘 값 리터럴 8개,
+   pre-commit이 탐지했으나 미수정) — 2026-09-10 항목(§pre-commit 6훅 전수 판정) 참고,
+   최초 발견은 2026-09-09 항목(§변경).
+
+10. DV-7 구현 미착수(채택은 완료, C002 대기) — 2026-09-10 항목(§DV-7 채택 결정, §C002
+    착수 조건) 참고.
+
+11. `selected50` 기준 회귀 실행 미실행(C001은 gold50만 실행) — 2026-09-09 항목(§미결)과
+    2026-09-10 항목(§미결, "2026-09-09 항목에서 이월") 참고.
+
+12. 곡률보정 무보정 호출부 6곳(`classify073.py`·`taxo_detect.py`·`vlm_verify.py`·
+    `map_lane.py`·`selection.py`·`folder_selection.py`) — 2026-09-09 항목(§미결) 참고,
+    최초 상세는 2026-09-08 항목(Track2 곡률보정 배선).
+
+13. `s2_conditioning` 문서-실측 불일치(스키마 기본값 `minimal` vs 실측 `rule_injected`,
+    GT 카테고리 힌트 상시 주입) — 2026-09-09 항목(§변경, `report.py`의 "스키마-실측
+    불일치" 체크 절) 참고. 최초 발견·상세 기록은 2026-08-28 항목(§공개의무 배선).
+
+14. **`conflict_register` pending 2건** — `common/schema/tag_vocab_v0.4.json:1357`
+    (`conflict_register`) 아래 `pending`(:1363-1366)에 다음 두 건이 있고, 이번에
+    DESIGN_LOG에 처음 등재한다.
+    - `C2_원인_축_귀속`(:1364): "target_axis 미표기 유지 여부 — KPI-18-5 Causal-F1
+      채점 단위에 직접 영향. KPI 정의서 대조 후 결정." 없으면 무엇이 불가능한가:
+      인과 원인이 필드축(cause_type 등) 중 어디에 귀속되는지 표기가 없으면 KPI-18-5
+      Causal-F1을 "필드 단위로" 채점할지 "전체 인과 판단 단위로" 채점할지가 코드마다
+      다르게 정해질 수 있고, 이는 verifier의 채점 로직과 gold 라벨링 스키마 양쪽에
+      영향을 준다. 기존 결정과 충돌 여부: `conflict_register.resolved`의
+      `C1_ego_종횡`(필드는 분해 저장, 사건은 단일 — 현행 `ego_action` 유지)과 유사한
+      "분해 vs 단일" 성격의 미결이나, C1은 이미 해소됐고 C2는 원인 축에 대해 같은
+      질문이 아직 열려 있다 — 직접 충돌은 아니지만 같은 계열의 미해소 잔여 항목.
+    - `C5_relevance_vs_influence`(:1365): "relevance 3값이 구 criticality·
+      influence_level을 대체 가능한지 — KPI-18-3 Influence-κ 대응 확인 필요." 없으면
+      무엇이 불가능한가: 구 계보(criticality·influence_level, 2값/서수 체계로 추정)와
+      신 계보(relevance 3값)의 대응표가 없으면 KPI-18-3 Influence-κ(구 계보 기준
+      설계된 것으로 보이는 지표)를 신 어휘 산출물에 그대로 적용할 수 있는지 판정할
+      수 없다 — 잘못 대응시키면 값 집합 크기가 다른 두 척도 간 κ 계산이 무의미해진다.
+      기존 결정과 충돌 여부: `resolved`의 `C4_environment`(맥락 전용, road_geometry·
+      road_condition은 별도 cause_type — 이중 계상 방지)와 같은 "구 계보 흡수 시
+      이중 계상 금지" 원칙이 이미 있으므로, C5 해소 시에도 relevance가 구
+      criticality·influence_level을 이중으로 흡수(같은 개념을 두 곳에 남기는 것)하지
+      않도록 그 원칙을 적용해야 한다 — 직접 충돌은 아니나 해소 시 지켜야 할 선행
+      결정.
+    두 건 모두 판정 주체는 KPI 정의서 대조 후 사람(또는 verifier)이며, 이 항목은
+    미결로만 남기고 판정하지 않는다.
+
+15. `실험계획_추론경로_260824.md` 실체 부재 — 저장소 어디에도 없음, `CLAUDE.md:91`
+    각주 처리만 완료된 상태 — 2026-09-10 이전부터 알려진 사실. `decisions/
+    DESIGN_LOG.md`의 2026-08-31 항목(재현성 불일치 조사, §6 "근거 추적 불가",
+    `실험계획_추론경로_260824.md`는 main 워킹트리에 없다는 기록) 참고. 참조만.
+    **해소됨 — 위 신규 항목([2026-09-11] `실험계획_추론경로_260824.md` 실체 확인)
+    참고.** §6 "근거 추적 불가"의 나머지 부분(원 관측 부재)은 그 항목에서도 미해소로
+    유지됨.
+
+### 미결
+- **1번(exp 네임스페이스 분리)을 신규 최상위 미결 항목으로 추가**: `outputs/episodes/`·
+  `outputs/labels/`를 `--exp`로 네임스페이스하거나, 최소한 재실행 전 이전 산출물을
+  아카이브하는 처리가 필요하다는 것이 이번에 실측으로 확인됨. **해소됨 — 아래 신규
+  항목([2026-09-11] exp 네임스페이스 분리 구현 — outputs/episodes·labels 사이클 간
+  덮어쓰기 방지) 참고.**
+- 나머지 항목(2~13, 15번)은 기존 미결 목록(2026-09-09/10 항목)에 이미 있으므로 위
+  15개 목록의 각 링크를 참고. **15번은 위에서 해소됨으로 갱신.**
+
+### 영향
+문서만 수정(`decisions/DESIGN_LOG.md`). 코드·스키마 변경 없음. 커밋하지 않음(이번
+세션 관행 유지, 사용자 지시).
+
+---
+
+## [2026-09-10] C001 완료 판정 확정 + DV-7(`cause_source`) 채택 결정 — 구현은 C002로 이관
+> **Task**: multi
+
+**배경**: 2026-09-09 사이클(C001, gold50 50클립 완주)의 완료 검토가 끝났다. 사람(사용자)이
+2026-09-10에 다음 세 가지를 결정했다: (1) 완료 기준 미해소분(재현성 2회 대조, pre-commit
+6훅 전수 확인) 해소 진행 (2) 미승인 제안서 DV-7(`experiments/proposals/
+2026-09-09_dv7-cause-source.md`) 채택 (3) 커밋하지 않음(워킹트리 유지). 이 항목은 그 결정과
+해소 작업 결과를 기록한다.
+
+### C001 완료 기준 5개 — 최종 판정
+- **① 계약 경로 실체화 + gold50 실행**: 충족(2026-09-09 항목에서 이미 확인)
+- **② pre-commit 6훅 전수 확인**: **부분 충족 + 신규 결함 기록**으로 종결(아래 상세)
+- **③ 리포트 수치화**: 충족(2026-09-09 항목, `reports/C001.md`)
+- **④ 재현성 2회 대조**: **충족, 불일치 원인 규명**으로 종결(아래 상세)
+- **⑤ 게이트 pass 없음(fail/undetermined만 산출)**: 충족(설계상 정상, 2026-09-09 항목에서 확인)
+
+### 재현성 2회 대조 (기준 ④)
+`./run.sh task_episode/run_pipeline.py --set gold50 --exp C001b --workers 4` 재실행,
+50/50/50 성공, wall-clock 501.0s.
+- `experiments/results/C001/manifest.json`과 `C001b/manifest.json`의 `run.report_hash`
+  불일치(C001: `b5aed702...`, C001b: `75976120...`)
+- `elapsed_s` 제외 실질 diff: `s0.*`(CAN 규칙 앵커) **50/50 완전 일치**(설계 원칙 1 "앵커
+  비오염" 재확인) / `track1.cause_by_segment` **6개 clip에서 변동**(`TEMPERATURE=0`인데도
+  흔들림 — manifest의 `decoding.seed`가 두 실행 모두 null이라 "seed 고정만으로는 재현되지
+  않는다" 원칙의 실측 사례) / `track2.n_tags_total` 다수 clip 변동(VLM 5-vote temp>0
+  설계상 정상)
+- 판정: 해시 불일치는 실패가 아니라 원인이 규명된 결과 → 기준 ④ **충족**으로 종결
+
+### pre-commit 6훅 전수 판정 (기준 ②)
+`git add -A` → `pre-commit run --all-files` → `git reset`(워킹트리 내용 보존 확인)으로
+6훅 전부 실검사 확인:
+- `check_no_literal_thresholds`·`check_vocab_duplication` — `task_episode/tag_v08.py`의
+  기존 부채(임계 리터럴 `LEAD_IN=3.0`, 어휘 값 리터럴 8개) 실제로 탐지·차단 확인(미수정,
+  판정 로직이라 범위 밖)
+- `check_gold_isolation`·`check_vocab_sync` — 정상
+- **신규 발견 — `check_import_separation`**: 형식상 Passed지만 probe 테스트로 탐지 실패
+  확인. 이 저장소의 flat import 관행(`run.sh`의 PYTHONPATH 평탄화로 `import tag_v08`처럼
+  모듈명 직접 import)과 훅의 디렉토리 basename 비교 로직이 맞지 않아 실제 위반을 탐지할
+  수 없는 구조적 결함
+- **신규 발견 — `check_experiment_card`**: 형식상 Passed지만 `.gitignore:25`가
+  `experiments/results/`를 통째로 무시해 정상 `git add -A` 워크플로우로는 이 훅의 대상이
+  절대 스테이징되지 않는 구조적 결함(강제 스테이징 probe로만 로직 정상 확인)
+- 판정: 6훅 모두 "대상 없음 침묵"은 해소됐으나 2개 훅(import-separation, experiment-card)은
+  실효 탐지력이 없는 구조적 결함이 새로 발견됨 → 기준 ② **"부분 충족 + 신규 결함 기록"**으로
+  종결
+
+### 매니페스트 리터럴 정정 (부수 작업, B6)
+`task_episode/run_pipeline.py`의 `MF.build()` 호출에서 `frame_rate=10`·`resolution=1280`
+리터럴을 제거해 `common/manifest.py`의 기본값 경로(`config.SEND_FPS`·
+`config.WINDOW_MAX_SIDE`)를 타도록 수정. 미사용 `import copy` 없음 확인(원래부터 없었음).
+`./run.sh task_episode/run_pipeline.py --set gold50 --exp C001c --n 2 --workers 2`로
+검증(정상 완주, manifest.json의 frame_rate/resolution이 config 경유로 확인됨).
+
+### DV-7 채택 결정 — `cause_source` 필드
+`experiments/proposals/2026-09-09_dv7-cause-source.md`의 제안(레코드에
+`cause_source ∈ {gt_confirmed, model_reported}` 필드 추가 — `tag_v08.py`의 `in_path`
+truthy 분기면 `gt_confirmed`, else 분기(모델 자유분류 채택)면 `model_reported`)을
+**채택한다**.
+- **채택 근거**: 판정 로직·enum·임계 불변, 이미 계산된 `in_path` 분기 결과를 기록만 하는
+  변경 — 무기록 fallback 금지 원칙(설계 원칙 4)과 동일 성격의 보완
+- **보강 근거(이번 사이클 신규 관측)**: 위 재현성 2회 대조에서 `track1.cause_by_segment`가
+  6개 clip에서 흔들리는 것이 관찰됨. cause 값 자체가 재현 불안정하다면, 어느 경로(GT
+  확정/모델 보고)로 나온 값인지 구분하는 `cause_source`의 필요성이 더 커진다 — 흔들림이
+  `model_reported` 경로에 쏠려 있는지는 이번엔 층화 확인 전이라 미검증이며, C002의
+  층화 채점으로 확인 대상
+- **구현은 이번 사이클에서 하지 않는다** — C002로 이관(아래 착수 조건)
+
+### 미결(다음 사이클 후보)
+- `check_import_separation`·`check_experiment_card` 구조적 결함 수정 — 변경축 후보로
+  등록, 착수 여부는 사람 판정 대기
+- (2026-09-09 항목에서 이월, 미해소) 곡률보정 무보정 호출부 6곳, cause 4→6값 전환,
+  vocab v0.4 전면 전환, `selected50.json` 기준 회귀 실행
+
+### C002 착수 조건
+- 변경축 1개만: DV-7(`cause_source` 필드) — §4 전환 규칙 "1 브랜치 = 1 변경 축" 준수
+- 대조 기준선: C001 / C001b
+- 구현 범위: `task_episode/tag_v08.py`의 cause 산출 블록에 `cause_source` 필드 부착(판정
+  로직·enum·임계 불변) + `verification/gate.py`의 `reachable` 검사가 `cause_source`
+  분기를 반영하도록 확장(새 필드를 읽는 것만 추가, 임계는 안 바꿈)
+- gold50 재실행 후 **층화 채점**(`gt_confirmed` vs `model_reported` 그룹별 별도 정확도·
+  게이트 통과율 보고) — DV-7 제안서 §4 가설·§6 반증 조건 그대로 적용
+
+### 영향
+수정: `decisions/DESIGN_LOG.md`(이 항목 추가). 코드 변경 없음 — 매니페스트 리터럴 정정은
+이미 별도로 적용·검증됐고 이 항목은 그 사실을 기록만 함. DV-7 구현은 미착수이며 다음
+사이클(C002) 항목에서 코드 diff와 함께 기록될 예정. 커밋하지 않음(워킹트리 유지, 사용자
+지시).
+
+---
+
+## [2026-09-09] 에이전트 자율 루프 배선 — 계약 경로 실체화 + pipeline-integrator 신설 + 첫 사이클(C001)
+> **Task**: multi
+
+**배경**: "task를 정의하면 에이전트가 결과를 확인해 가며 최적화를 진행하고, 사람은 리포트
+리뷰로 결정만 하는" 체제를 원한다는 요청. 직전 엔트리(①agent 설계상 중복 오류)가 이미
+지적했던 "인수인계 파일 계약이 실제와 다른 세계를 전제한다"는 미해결 항목을 이번에 메웠다
+— 배선 없이는 "각 에이전트가 역할대로 동작하는지"를 50클립 재실행만으로는 관찰할 수
+없다는 점을 먼저 확인(계약 경로 6곳 전부 미실재, verifier가 채점할 코드 0줄, P/R 계산
+코드 git 이력에도 없음)한 뒤 배선을 만들고, 그 배선으로 gold 50클립 1사이클을 도는 것
+자체를 검증으로 삼았다. 상세 계획: `~/.claude/plans/agent-fluttering-gosling.md`.
+
+### 변경
+- **계약 경로 실체화**: `outputs/episodes/`·`outputs/labels/`·`experiments/{cards,results,
+  proposals}/`·`reports/`·`verification/` 디렉토리 생성(`AGENT_DESIGN.md` §3 표와 동일 경로).
+  `hooks/hook_utils.py`의 `VERIFY_DIRS`·`CARDS_DIR`·`RESULTS_DIR`는 경로 자체는 이미 맞았고
+  (직전 엔트리에서 정정), 디렉토리 실재만 없었다 — 이번에 실재하게 되어
+  `check_import_separation`·`check_experiment_card` 2개 훅이 "대상 없음" 침묵을 벗어나
+  실제로 검사를 수행함을 `pre-commit run --all-files`로 확인(임시 스테이징 후 언스테이징,
+  커밋 안 함). 그 과정에서 `task_episode/tag_v08.py`의 **기존 리터럴 위반 2건**(로컬
+  `LEAD_IN=3.0`, 어휘값 8개 리터럴)이 실제로 걸리는 것도 확인 — 이번 변경 범위 밖(이미
+  `thresholds.py` 주석에 "건드리지 않음"으로 문서화된 기존 부채)이라 손대지 않았다
+- **`pipeline-integrator` 에이전트 신설**(10번째, `.claude/agents/pipeline-integrator.md`):
+  rule-engineer(S0+S1)·vlm-engineer(S2+S3)의 산출물이 실제로는 `tag_v08.tag_clip_v08()`
+  한 함수에 융합돼 관찰 불가능했던 문제를, 로직을 바꾸지 않고 반환값을 계약 경로로
+  내보내는 배선만 담당하는 별도 축으로 분리. `AGENT_DESIGN.md` §1~§4·§6에 반영
+- **`task_episode/run_workflow_audit.py` → `task_episode/run_pipeline.py` 승격**: 기존
+  카운트 요약(S0/Track1/Track2 성공률·CJK·파싱실패·arc불일치)은 유지하고, clip마다
+  `outputs/episodes/<clip>.json`(S0+S1 후보 전량, 미선택 포함)·`outputs/labels/<clip>/
+  {s2,s3,final}.json`(S2/S3 분리)·`experiments/results/<exp>/manifest.json`을 추가로 쓴다.
+  `--set gold50|selected50` 인자로 Stage1(`selected50.json`)과 gold(`sample_clips.json`,
+  gold.json 보유 50)를 명시적으로 분리 — 두 세트는 교집합 0이라 섞어서 하나의 분포로
+  보고하지 않는다(가이드 §1.5)
+- **`tag_v08.py` 최소 개입**: `_reason()`(S2) 출력과 `_structure()`(S3) 스냅샷을
+  `rec["_s2_raw"]`/`rec["_s3_raw"]`로 추가만 함(4줄) — 시그니처·판정 로직 불변
+- **`common/manifest.py` 신설**: 재현성 매니페스트 5군(모델/서빙/디코딩/입력/데이터).
+  체크섬·dtype·tensor_parallel 등 NIM 서빙 API가 노출하지 않는 항목은 추정하지 않고
+  `"unavailable:<사유>"`로 명시 기록(무기록 fallback 금지 원칙 적용)
+- **`verification/` 신설**(gate.py·score_gold.py·report.py) — 파이프라인 모듈 import
+  없이 `outputs/`의 JSON만 읽음(check_import_separation 요건):
+  - `gate.py`: 물리 게이트 5술어(`verifier.md`가 CLAUDE.md 6검사 중 geometric_consistency+
+    proximity_range를 reachable로 통합한 설계를 그대로 구현). 산출은 fail/undetermined만
+  - `score_gold.py`: gold 50 채점. `tmp/run_demo_diag.py::match_gold()`(최대겹침 매칭)
+    확장 — recall은 신뢰 가능, precision은 sparse gold(absent 라벨 없음)라 **하한만**
+  - `report.py`: `reports/<exp>.md` 자동 생성 — 계약 경로 현황 + 앵커 오염 정적 확인 +
+    Track1/2 불일치 + 무기록 fallback + 스키마-실측 불일치 + 목표 완수도 + 게이트/gold
+    요약 + 전 사이클 회귀
+- **사이클 구조 도입**(`AGENT_DESIGN.md` §6, `CLAUDE.md` "에이전트 위임" 절): task 정의
+  → 카드 자동등록(실행 전, 타임스탬프 고정) → 실행·영속화 → 게이트+채점+회귀 → 제안서
+  → **사람 승인은 사이클 끝 1곳만** → 결정 기록. 강제규칙 3(사전 등록 없는 채점 거절)과의
+  정합은 "카드가 실행 전 자동 생성·타임스탬프 고정"으로 형식 유지, 사람 개입 시점만
+  뒤로 이동한 것으로 처리
+
+### 검증 — C001 (gold 50, workers=4)
+`./run.sh task_episode/run_pipeline.py --set gold50 --exp C001 --workers 4` → S0/Track1/
+Track2 전부 50/50 성공, CJK 1건, 파싱실패 0, arc 불일치 0/50, map_valid 17/50,
+wall-clock 485.8s(8.1분). 상세: `reports/C001.md`.
+
+- **gold 채점이 기존 문서 수치를 독립 재현**: `recall=0.821` (CLAUDE.md §1 기존 기재
+  "OR합집합 0.81"과 근사 일치) — 별도로 새로 짠 매칭 로직이 기존 ad-hoc 측정과 정합적이라
+  score_gold.py의 신뢰도에 대한 교차 확인이 됨. `precision_lower_bound=0.144`는 recall-우선
+  OR 합집합 설계(candidates.py 주석 "precision은 Phase C"와 일치하는 결과)상 예상된 낮음이며
+  하한으로만 보고(sparse gold라 실제 precision은 더 높을 수 있음)
+- **물리 게이트가 신규 발견을 냈다**: `reachable` 검사 fail=32/60(53%) — 전부 `cause=
+  "agent"`로 확정된 세그먼트인데 `critical_components`에 GT 거리 계측(`ref.distance_m`)이
+  전혀 없는 경우. 원인 추적 결과 `tag_v08.py:270-277`의 cause 산출이 두 경로(GT
+  `in_path` 존재 → "agent" / GT 없음 → 모델 자유분류 `v.get("cause")`도 "agent"일 수 있음)
+  를 **구분 없이 같은 문자열로 합류**시키기 때문 — 지금까지 어떤 리포트에도 없던 발견.
+  제안서로 남김: `experiments/proposals/2026-09-09_dv7-cause-source.md`(DV-7, `cause_source`
+  필드 추가, 판정 로직 불변)
+- **목표 완수도**: 예상대로 미달 확인 — `transition_filters_passed`·`curvature_correction_
+  source`·`merged_from`·`window_start_reason`·`window_end_reason`·`threshold_set_id`·
+  `physical_gate_passed`·`camera_visible`·`episode_confidence` 전부 0/60. cause 4값
+  vs 목표 6값(정적 사실). 이번 사이클에서 메우지 않음 — 다음 사이클 변경축 후보로 남김
+- **무기록 fallback 잔존 확인**: map_valid=false 33/50인데 `fallback_path` 플래그가
+  산출물 어디에도 없음 — 기존 갭, 이번 범위 밖(별도 변경축)
+
+### 영향
+신규: `.claude/agents/pipeline-integrator.md`, `common/manifest.py`, `verification/
+{gate,score_gold,report}.py`, `task_episode/run_pipeline.py`, `experiments/proposals/
+2026-09-09_dv7-cause-source.md`. 수정: `docs/design/AGENT_DESIGN.md`(§1~§4·§6),
+`CLAUDE.md`(에이전트 위임 절 신설), `hooks/hook_utils.py`(주석·GOLD_ALLOWED 정정),
+`common/thresholds.py`(`GATE_PROXIMITY_MAX_M` 추가), `.gitignore`(`experiments/results/`·
+`reports/*.md` 추가), `task_episode/tag_v08.py`(4줄, 판정 로직 불변). 삭제:
+`task_episode/run_workflow_audit.py`(run_pipeline.py로 승격, 기능 상위집합). 전부
+미커밋 — 사용자 지시 대기(이 저장소 관행상 기본적으로 커밋은 명시 요청 시에만).
+
+### 미결(다음 사이클 후보)
+- `experiments/proposals/2026-09-09_dv7-cause-source.md` 승인 여부 — 물리 게이트 reachable
+  검사의 실효성이 여기 달림
+- 곡률보정 무보정 호출부 6곳(`classify073.py:183` 등) — 여전히 범위 밖
+- cause 4→6값 전환, vocab v0.4 전면 전환 — 별도 변경축
+- `selected50.json`(Stage1 top-50) 기준 회귀 실행 — C001은 gold50만 실행, 회귀 기준선
+  미실행
+
+---
+
 ## [2026-09-08] Track2 곡률보정 배선 — Track1/Track2 arc 불일치 해소
 > **Task**: episode(Track2)
 
@@ -357,7 +956,10 @@ tag_v08 쪽은 seed로 해소되지 않는 잔차가 실측됐다는 점을 구�
    `versioning.reproducibility_params` 5군을 기록하는 코드도 없다(`disclosure.py`의 4필드가
    유일한 메타이며 디코딩 축 없음). `CLAUDE.md:88`이 정본으로 지목한
    `실험계획_추론경로_260824.md`는 main 워킹트리에 없다(실체는 워크트리의
-   `docs/experiments/experiment_design_v0.1.md`).
+   `docs/experiments/experiment_design_v0.1.md`). **[2026-09-11 갱신] 문서 소재는 확인·
+   반영됨(맨 위 `[2026-09-11] 실험계획_추론경로_260824.md 실체 확인` 항목 참고). 다만 그
+   문서 자체가 이 6번이 찾는 "5-vote 비결정성의 원 관측(날짜·수치·해시 비교)"을 담고
+   있지는 않으므로, 이 6번의 본체(원 관측 부재)는 여전히 미해소다.**
 
 **판단**: vocab 지정(닫힌 어휘 점수화) 전환을 **재현성 근거로 추진하지 않는다.** 1번 재검증
 결과 활성 파이프라인의 anchor는 이미 결정적이므로, 그 경로에서 진짜 decode 비결정성이

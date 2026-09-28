@@ -1,0 +1,1774 @@
+{
+ "002dec8e-3d95-4cc2-abbe-99b3a2e78618": {
+  "dur": 19.899985,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 4.8,
+    "arc": [
+     "stop",
+     "accelerate"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   },
+   {
+    "t0": 10.1,
+    "t1": 11.9,
+    "arc": [
+     "accelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 17.6,
+    "t1": 19.9,
+    "arc": [
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "014a6337-e5ff-42fc-9487-49e674b4cac7": {
+  "dur": 19.999599,
+  "episodes": [
+   {
+    "t0": 10.9,
+    "t1": 11.5,
+    "arc": [
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 13.7,
+    "t1": 20.0,
+    "arc": [
+     "decelerate",
+     "stop"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   }
+  ]
+ },
+ "01c10155-3284-43a2-979c-9ee062264fc2": {
+  "dur": 19.800118,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 11.6,
+    "arc": [
+     "stop",
+     "accelerate",
+     "decelerate",
+     "stop",
+     "accelerate",
+     "accelerate",
+     "accelerate"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   }
+  ]
+ },
+ "01c46b6b-fe98-4754-98e1-7010d294bff4": {
+  "dur": 19.899819,
+  "episodes": [
+   {
+    "t0": 5.3,
+    "t1": 7.1,
+    "arc": [
+     "lane_change_right"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "01c6b380-30b5-4565-bc15-2607da5b671f": {
+  "dur": 19.89999,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 2.4,
+    "arc": [
+     "stop",
+     "accelerate"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   },
+   {
+    "t0": 11.7,
+    "t1": 19.9,
+    "arc": [
+     "stop",
+     "accelerate",
+     "stop"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   }
+  ]
+ },
+ "01d3588e-bca7-4a18-8e74-c6cfe9e996db": {
+  "dur": 19.900089,
+  "episodes": [
+   {
+    "t0": 7.9,
+    "t1": 13.5,
+    "arc": [
+     "decelerate",
+     "decelerate",
+     "stop"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   },
+   {
+    "t0": 18.9,
+    "t1": 19.9,
+    "arc": [
+     "decelerate",
+     "stop"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   }
+  ]
+ },
+ "022e5c9c-dceb-4026-a1a4-1bc4a4cccc0e": {
+  "dur": 19.900366,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 0.6,
+    "arc": [
+     "accelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 3.2,
+    "t1": 9.6,
+    "arc": [
+     "decelerate",
+     "stop",
+     "accelerate"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   },
+   {
+    "t0": 16.6,
+    "t1": 19.9,
+    "arc": [
+     "turn_left",
+     "decelerate"
+    ],
+    "ego_action": "ego_turn_left",
+    "auto": [
+     "turn_left"
+    ]
+   }
+  ]
+ },
+ "0262ea23-9be7-430e-8c62-d251b4cd9b01": {
+  "dur": 19.899187,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 2.4,
+    "arc": [
+     "turn_right",
+     "decelerate"
+    ],
+    "ego_action": "ego_turn_right",
+    "auto": [
+     "turn_right"
+    ]
+   }
+  ]
+ },
+ "028c7751-c0b9-4a92-aeb7-3d074f1f156c": {
+  "dur": 19.99997,
+  "episodes": []
+ },
+ "02b29a4a-3efa-4304-8394-0a05db9b2c59": {
+  "dur": 19.900071,
+  "episodes": []
+ },
+ "02fd3a17-5936-4098-849f-50ae34d07370": {
+  "dur": 19.899812,
+  "episodes": [
+   {
+    "t0": 12.7,
+    "t1": 19.5,
+    "arc": [
+     "decelerate",
+     "turn_left",
+     "decelerate"
+    ],
+    "ego_action": "ego_turn_left",
+    "auto": [
+     "turn_left"
+    ]
+   }
+  ]
+ },
+ "031bc104-aadb-4a02-9611-9f49be421c0f": {
+  "dur": 19.999859,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 6.2,
+    "arc": [
+     "stop",
+     "accelerate"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   },
+   {
+    "t0": 9.6,
+    "t1": 12.6,
+    "arc": [
+     "turn_left",
+     "decelerate"
+    ],
+    "ego_action": "ego_turn_left",
+    "auto": [
+     "turn_left"
+    ]
+   }
+  ]
+ },
+ "03560c1a-eac6-499d-bd81-90a19b8d66bd": {
+  "dur": 19.899991,
+  "episodes": []
+ },
+ "038678de-6307-4cd2-a3c9-5d64e1fb8862": {
+  "dur": 19.899922,
+  "episodes": []
+ },
+ "0391b4a7-3956-4146-ad2e-98b74e7877fa": {
+  "dur": 19.900044,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 10.3,
+    "arc": [
+     "decelerate",
+     "stop",
+     "accelerate",
+     "decelerate"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   }
+  ]
+ },
+ "0397f34a-b3f3-4e40-ac2b-a9fcd656226c": {
+  "dur": 19.900176,
+  "episodes": [
+   {
+    "t0": 15.9,
+    "t1": 16.9,
+    "arc": [
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 19.4,
+    "t1": 19.9,
+    "arc": [
+     "accelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "043d0d6f-f357-43d6-a819-246551190ac0": {
+  "dur": 19.999899,
+  "episodes": [
+   {
+    "t0": 13.8,
+    "t1": 20.0,
+    "arc": [
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "048a4c62-4128-4bb8-9fb6-8af4720eac12": {
+  "dur": 20.000057,
+  "episodes": [
+   {
+    "t0": 1.0,
+    "t1": 20.0,
+    "arc": [
+     "decelerate",
+     "stop"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   }
+  ]
+ },
+ "0494325b-8704-4aa9-939f-585f99fe97c7": {
+  "dur": 19.89965,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 8.0,
+    "arc": [
+     "decelerate",
+     "stop",
+     "accelerate"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   }
+  ]
+ },
+ "04a4ce45-01d8-456f-b536-aa5bcb34b960": {
+  "dur": 19.900052,
+  "episodes": [
+   {
+    "t0": 17.7,
+    "t1": 19.9,
+    "arc": [
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "04ad255e-6a5f-44ad-91db-ad0c838d97ca": {
+  "dur": 19.89992,
+  "episodes": [
+   {
+    "t0": 2.0,
+    "t1": 2.8,
+    "arc": [
+     "accelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 7.4,
+    "t1": 11.5,
+    "arc": [
+     "turn_right",
+     "decelerate"
+    ],
+    "ego_action": "ego_turn_right",
+    "auto": [
+     "turn_right"
+    ]
+   }
+  ]
+ },
+ "04b08c41-326f-4cef-af21-359643f3b3d8": {
+  "dur": 19.899885,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 9.0,
+    "arc": [
+     "stop",
+     "accelerate"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   }
+  ]
+ },
+ "04bb5e8e-5e8b-447b-87e1-b2911bae99a9": {
+  "dur": 19.899976,
+  "episodes": [
+   {
+    "t0": 16.5,
+    "t1": 19.9,
+    "arc": [
+     "stop"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   }
+  ]
+ },
+ "04c5a3f4-7d2f-499a-ba05-b57194594735": {
+  "dur": 19.899887,
+  "episodes": [
+   {
+    "t0": 1.7,
+    "t1": 19.9,
+    "arc": [
+     "decelerate",
+     "stop"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   }
+  ]
+ },
+ "04d10e40-4d93-4a6f-8de7-7bf3010e493c": {
+  "dur": 19.899817,
+  "episodes": [
+   {
+    "t0": 11.9,
+    "t1": 12.3,
+    "arc": [
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 16.1,
+    "t1": 16.6,
+    "arc": [
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 18.7,
+    "t1": 19.9,
+    "arc": [
+     "stop"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   }
+  ]
+ },
+ "04e9fa6b-255a-48df-9854-6a8b2fbc89f9": {
+  "dur": 19.899767,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 7.1,
+    "arc": [
+     "decelerate",
+     "stop",
+     "accelerate",
+     "turn_right"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "turn_right",
+     "stop"
+    ]
+   },
+   {
+    "t0": 16.3,
+    "t1": 19.9,
+    "arc": [
+     "stop",
+     "accelerate"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   }
+  ]
+ },
+ "05008867-46a0-4afc-8c50-00224fc828d9": {
+  "dur": 19.899946,
+  "episodes": []
+ },
+ "05095b2e-d0c2-4b0b-ab73-b35c138044ad": {
+  "dur": 19.900029,
+  "episodes": []
+ },
+ "054da32b-9f3d-4074-93ab-044036b679f8": {
+  "dur": 19.900042,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 6.3,
+    "arc": [
+     "decelerate",
+     "accelerate",
+     "turn_left",
+     "decelerate"
+    ],
+    "ego_action": "ego_turn_left",
+    "auto": [
+     "turn_left"
+    ]
+   }
+  ]
+ },
+ "0583436b-2aae-4c92-8596-7251cde9d5bd": {
+  "dur": 19.899937,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 1.8,
+    "arc": [
+     "accelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 4.5,
+    "t1": 8.8,
+    "arc": [
+     "turn_left",
+     "decelerate"
+    ],
+    "ego_action": "ego_turn_left",
+    "auto": [
+     "turn_left"
+    ]
+   },
+   {
+    "t0": 19.1,
+    "t1": 19.9,
+    "arc": [
+     "stop"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   }
+  ]
+ },
+ "058bf960-f531-4ae6-8b24-455d7683676e": {
+  "dur": 19.899561,
+  "episodes": [
+   {
+    "t0": 0.1,
+    "t1": 1.6,
+    "arc": [
+     "accelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 3.7,
+    "t1": 4.6,
+    "arc": [
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 7.7,
+    "t1": 13.5,
+    "arc": [
+     "decelerate",
+     "turn_left",
+     "accelerate",
+     "decelerate"
+    ],
+    "ego_action": "ego_turn_left",
+    "auto": [
+     "turn_left"
+    ]
+   }
+  ]
+ },
+ "05c4363f-8408-4d54-8a5b-21d711ef9657": {
+  "dur": 19.899857,
+  "episodes": [
+   {
+    "t0": 16.5,
+    "t1": 19.9,
+    "arc": [
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "060d347c-6adb-4b22-8aa4-1a9efbd42a46": {
+  "dur": 19.899941,
+  "episodes": [
+   {
+    "t0": 3.4,
+    "t1": 4.2,
+    "arc": [
+     "accelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "064967a7-08a1-4cf0-b55b-5fcde3d91f67": {
+  "dur": 19.899915,
+  "episodes": [
+   {
+    "t0": 15.3,
+    "t1": 19.9,
+    "arc": [
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "064a2176-6d44-4145-9322-368726368c18": {
+  "dur": 19.999837,
+  "episodes": [
+   {
+    "t0": 1.4,
+    "t1": 8.5,
+    "arc": [
+     "decelerate",
+     "turn_right",
+     "decelerate"
+    ],
+    "ego_action": "ego_turn_right",
+    "auto": [
+     "turn_right"
+    ]
+   }
+  ]
+ },
+ "0683968b-0737-4ae5-96c4-ec1ea810579f": {
+  "dur": 19.900098,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 0.4,
+    "arc": [
+     "accelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 16.1,
+    "t1": 16.7,
+    "arc": [
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "06d98800-344e-41db-9772-c356bfdc6ccc": {
+  "dur": 19.799827,
+  "episodes": []
+ },
+ "071a2b46-5b1f-4006-95d9-4a6b731d0071": {
+  "dur": 19.899802,
+  "episodes": [
+   {
+    "t0": 3.9,
+    "t1": 4.7,
+    "arc": [
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 7.1,
+    "t1": 11.0,
+    "arc": [
+     "accelerate",
+     "turn_left",
+     "decelerate"
+    ],
+    "ego_action": "ego_turn_left",
+    "auto": [
+     "turn_left"
+    ]
+   }
+  ]
+ },
+ "07288d63-19e9-4968-809d-ce9420aadcb6": {
+  "dur": 19.899668,
+  "episodes": [
+   {
+    "t0": 3.7,
+    "t1": 8.3,
+    "arc": [
+     "lane_change_left",
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "07d742af-2518-48b7-9619-f4514c322ebd": {
+  "dur": 20.000166,
+  "episodes": []
+ },
+ "080d1e57-dd61-433a-8d9f-f97c4e2a0b59": {
+  "dur": 19.899862,
+  "episodes": [
+   {
+    "t0": 4.4,
+    "t1": 16.3,
+    "arc": [
+     "decelerate",
+     "decelerate",
+     "stop",
+     "accelerate"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   }
+  ]
+ },
+ "0853ef8f-9d6b-4963-8ea3-fafb7e107ac7": {
+  "dur": 19.90012,
+  "episodes": []
+ },
+ "089b83ce-1c74-47d2-a91c-368a1a26f36e": {
+  "dur": 20.000462,
+  "episodes": [
+   {
+    "t0": 14.5,
+    "t1": 16.0,
+    "arc": [
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 18.1,
+    "t1": 20.0,
+    "arc": [
+     "decelerate",
+     "turn_right",
+     "decelerate"
+    ],
+    "ego_action": "ego_turn_right",
+    "auto": [
+     "turn_right"
+    ]
+   }
+  ]
+ },
+ "091dbd2d-e39c-4178-b25f-ae2d1b5f46cf": {
+  "dur": 19.899846,
+  "episodes": [
+   {
+    "t0": 5.6,
+    "t1": 7.0,
+    "arc": [
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 11.2,
+    "t1": 18.1,
+    "arc": [
+     "decelerate",
+     "turn_right",
+     "decelerate"
+    ],
+    "ego_action": "ego_turn_right",
+    "auto": [
+     "turn_right"
+    ]
+   }
+  ]
+ },
+ "09312f4a-c618-46a8-a8ff-1db37e043b5d": {
+  "dur": 19.899932,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 3.4,
+    "arc": [
+     "stop"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   },
+   {
+    "t0": 6.1,
+    "t1": 9.0,
+    "arc": [
+     "turn_left"
+    ],
+    "ego_action": "ego_turn_left",
+    "auto": [
+     "turn_left"
+    ]
+   }
+  ]
+ },
+ "0931a850-4303-47bc-a041-4e17b4e36c2b": {
+  "dur": 19.89986,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 3.4,
+    "arc": [
+     "accelerate",
+     "turn_right"
+    ],
+    "ego_action": "ego_turn_right",
+    "auto": [
+     "turn_right"
+    ]
+   }
+  ]
+ },
+ "093a11c6-45ea-4a72-8175-d30086775faf": {
+  "dur": 19.99998,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 7.4,
+    "arc": [
+     "stop"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   },
+   {
+    "t0": 10.1,
+    "t1": 10.5,
+    "arc": [
+     "accelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 14.7,
+    "t1": 18.8,
+    "arc": [
+     "turn_left",
+     "decelerate"
+    ],
+    "ego_action": "ego_turn_left",
+    "auto": [
+     "turn_left"
+    ]
+   }
+  ]
+ },
+ "09603b57-0478-493e-ae8d-b4a16ade645d": {
+  "dur": 19.899829,
+  "episodes": [
+   {
+    "t0": 1.4,
+    "t1": 2.8,
+    "arc": [
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 7.5,
+    "t1": 10.2,
+    "arc": [
+     "accelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "0a1980cc-1756-4390-9e9c-2935075fe489": {
+  "dur": 20.000025,
+  "episodes": []
+ },
+ "0a1bd751-d538-42ad-babc-9f987007fa49": {
+  "dur": 19.999998,
+  "episodes": []
+ },
+ "0a37154c-6b70-4082-b4ad-915d1389eebf": {
+  "dur": 20.000056,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 5.4,
+    "arc": [
+     "stop",
+     "accelerate"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   },
+   {
+    "t0": 13.2,
+    "t1": 13.6,
+    "arc": [
+     "accelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "0a515b2c-571e-46bf-942f-31d595e20c8c": {
+  "dur": 20.000112,
+  "episodes": [
+   {
+    "t0": 3.6,
+    "t1": 9.9,
+    "arc": [
+     "decelerate",
+     "turn_right"
+    ],
+    "ego_action": "ego_turn_right",
+    "auto": [
+     "turn_right"
+    ]
+   }
+  ]
+ },
+ "0a701173-f30e-4a84-a938-6d15d4cf9c2f": {
+  "dur": 19.899969,
+  "episodes": [
+   {
+    "t0": 8.1,
+    "t1": 17.4,
+    "arc": [
+     "decelerate",
+     "lane_change_left"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "0a712de1-9adc-4cae-a65b-1b50d4164ef0": {
+  "dur": 20.000005,
+  "episodes": [
+   {
+    "t0": 7.6,
+    "t1": 20.0,
+    "arc": [
+     "decelerate",
+     "stop"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   }
+  ]
+ },
+ "0a846a08-27d8-4eb4-b0f1-495ad88e28de": {
+  "dur": 19.899426,
+  "episodes": [
+   {
+    "t0": 14.3,
+    "t1": 15.1,
+    "arc": [
+     "accelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "0a948f59-0a06-41a2-8e20-ac3a39ff4d61": {
+  "dur": 19.900124,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 7.9,
+    "arc": [
+     "stop",
+     "accelerate"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   },
+   {
+    "t0": 12.0,
+    "t1": 13.2,
+    "arc": [
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "0abe118e-aa79-41f6-a719-f2df8abaf1ea": {
+  "dur": 19.899906,
+  "episodes": [
+   {
+    "t0": 8.2,
+    "t1": 19.9,
+    "arc": [
+     "decelerate",
+     "stop",
+     "accelerate"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   }
+  ]
+ },
+ "0b4ddc9a-b25e-4cfb-b00f-716d9b7b08ec": {
+  "dur": 19.900545,
+  "episodes": [
+   {
+    "t0": 1.4,
+    "t1": 2.1,
+    "arc": [
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "0b4f82cd-426c-4e1a-989f-57e406a64f16": {
+  "dur": 19.900065,
+  "episodes": [
+   {
+    "t0": 14.0,
+    "t1": 18.7,
+    "arc": [
+     "decelerate",
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "0b501241-5ce3-45a1-92bb-298c2b761687": {
+  "dur": 19.899908,
+  "episodes": []
+ },
+ "0c1b6cbd-8389-4ed9-9caf-4589d67695c4": {
+  "dur": 20.000093,
+  "episodes": []
+ },
+ "0c352c59-b65b-491b-95d8-f70d0510007a": {
+  "dur": 19.999519,
+  "episodes": [
+   {
+    "t0": 3.3,
+    "t1": 11.2,
+    "arc": [
+     "decelerate",
+     "stop",
+     "accelerate"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   },
+   {
+    "t0": 16.7,
+    "t1": 20.0,
+    "arc": [
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "0c3c7f7e-9796-47bb-b302-1b6bf9a25039": {
+  "dur": 19.800505,
+  "episodes": [
+   {
+    "t0": 10.9,
+    "t1": 11.5,
+    "arc": [
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 14.0,
+    "t1": 17.8,
+    "arc": [
+     "turn_right"
+    ],
+    "ego_action": "ego_turn_right",
+    "auto": [
+     "turn_right"
+    ]
+   }
+  ]
+ },
+ "0c7e01c8-bab2-4f2b-ab44-931765836fc5": {
+  "dur": 19.99997,
+  "episodes": [
+   {
+    "t0": 18.4,
+    "t1": 20.0,
+    "arc": [
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "0c8731a8-9cd4-4f59-9603-165b1ed53e07": {
+  "dur": 19.800077,
+  "episodes": [
+   {
+    "t0": 7.3,
+    "t1": 8.5,
+    "arc": [
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "0d31e7ed-fde4-4863-9d43-720e064e81cd": {
+  "dur": 19.899719,
+  "episodes": [
+   {
+    "t0": 0.1,
+    "t1": 0.9,
+    "arc": [
+     "accelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 8.4,
+    "t1": 15.5,
+    "arc": [
+     "decelerate",
+     "accelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 18.7,
+    "t1": 19.1,
+    "arc": [
+     "accelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "0d352988-bdfe-4932-b260-127828b2e8ab": {
+  "dur": 19.899976,
+  "episodes": [
+   {
+    "t0": 5.9,
+    "t1": 13.2,
+    "arc": [
+     "decelerate",
+     "stop",
+     "accelerate"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   }
+  ]
+ },
+ "0d35d80b-5b67-406a-9018-e94b3f3d7372": {
+  "dur": 19.900431,
+  "episodes": []
+ },
+ "0d541ca3-6940-46ad-8f51-cfa2a6908cfb": {
+  "dur": 20.000001,
+  "episodes": [
+   {
+    "t0": 12.6,
+    "t1": 13.1,
+    "arc": [
+     "accelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "0d6f5a27-4dbc-4a73-ab83-c3e808450e83": {
+  "dur": 19.899466,
+  "episodes": []
+ },
+ "0dd3eb7f-47a1-40d5-a228-d06ea1288839": {
+  "dur": 19.900126,
+  "episodes": []
+ },
+ "0e673817-7b29-4010-969b-ceb4459eb729": {
+  "dur": 19.90003,
+  "episodes": [
+   {
+    "t0": 1.7,
+    "t1": 3.2,
+    "arc": [
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 7.0,
+    "t1": 19.9,
+    "arc": [
+     "decelerate",
+     "stop"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   }
+  ]
+ },
+ "0eb6f58a-a892-4b77-96d7-8d5286d40c1e": {
+  "dur": 19.899846,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 0.8,
+    "arc": [
+     "accelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 17.4,
+    "t1": 18.7,
+    "arc": [
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "0ec20b83-bba6-4713-a560-41c074453212": {
+  "dur": 19.899877,
+  "episodes": [
+   {
+    "t0": 0.2,
+    "t1": 3.8,
+    "arc": [
+     "turn_right"
+    ],
+    "ego_action": "ego_turn_right",
+    "auto": [
+     "turn_right"
+    ]
+   }
+  ]
+ },
+ "0ed4233e-28cd-4638-93f7-ad1728578dca": {
+  "dur": 19.899859,
+  "episodes": []
+ },
+ "0ee7a512-8738-41ac-a52b-a96d4ec65705": {
+  "dur": 19.900049,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 11.6,
+    "arc": [
+     "stop",
+     "accelerate",
+     "turn_left",
+     "decelerate"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "turn_left",
+     "stop"
+    ]
+   }
+  ]
+ },
+ "0ee7a86c-9e20-4257-8cfa-8cb5abb08968": {
+  "dur": 19.999932,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 12.3,
+    "arc": [
+     "stop",
+     "accelerate",
+     "turn_left",
+     "decelerate"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "turn_left",
+     "stop"
+    ]
+   }
+  ]
+ },
+ "0f5e616c-6223-4ede-ab77-bd781a952556": {
+  "dur": 20.000181,
+  "episodes": [
+   {
+    "t0": 4.9,
+    "t1": 12.2,
+    "arc": [
+     "decelerate",
+     "accelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "0fa0827c-104c-429c-b8e4-38ff18f5294f": {
+  "dur": 19.900021,
+  "episodes": [
+   {
+    "t0": 5.3,
+    "t1": 11.6,
+    "arc": [
+     "decelerate",
+     "accelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "0ff12a58-b676-4846-bab0-c32c7dc08879": {
+  "dur": 19.900281,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 8.5,
+    "arc": [
+     "stop",
+     "accelerate"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   }
+  ]
+ },
+ "10014ff3-27f3-4371-9f53-3ef61cefe27d": {
+  "dur": 19.900276,
+  "episodes": [
+   {
+    "t0": 2.5,
+    "t1": 9.8,
+    "arc": [
+     "decelerate",
+     "stop",
+     "accelerate",
+     "accelerate"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   },
+   {
+    "t0": 12.1,
+    "t1": 13.0,
+    "arc": [
+     "accelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 17.3,
+    "t1": 19.9,
+    "arc": [
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "10119ec9-ecb6-4eac-ac18-c50e858965a9": {
+  "dur": 19.899788,
+  "episodes": [
+   {
+    "t0": 2.2,
+    "t1": 6.0,
+    "arc": [
+     "decelerate",
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 8.3,
+    "t1": 12.6,
+    "arc": [
+     "turn_right"
+    ],
+    "ego_action": "ego_turn_right",
+    "auto": [
+     "turn_right"
+    ]
+   }
+  ]
+ },
+ "1046d735-4a27-4252-97e3-45abc7972848": {
+  "dur": 19.900024,
+  "episodes": [
+   {
+    "t0": 2.9,
+    "t1": 9.8,
+    "arc": [
+     "decelerate",
+     "accelerate",
+     "turn_right"
+    ],
+    "ego_action": "ego_turn_right",
+    "auto": [
+     "turn_right"
+    ]
+   }
+  ]
+ },
+ "1063fbf7-9921-40e9-b2ba-a3071cbe5f46": {
+  "dur": 19.999769,
+  "episodes": [
+   {
+    "t0": 10.6,
+    "t1": 20.0,
+    "arc": [
+     "decelerate",
+     "stop"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   }
+  ]
+ },
+ "1091f438-e82e-436a-a236-c3f1bb8d9f25": {
+  "dur": 19.899898,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 0.9,
+    "arc": [
+     "accelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 6.9,
+    "t1": 11.1,
+    "arc": [
+     "decelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 17.5,
+    "t1": 19.4,
+    "arc": [
+     "accelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "10a66f52-ed12-4220-b348-53f2e67641a6": {
+  "dur": 19.900169,
+  "episodes": [
+   {
+    "t0": 6.9,
+    "t1": 12.1,
+    "arc": [
+     "decelerate",
+     "turn_left"
+    ],
+    "ego_action": "ego_turn_left",
+    "auto": [
+     "turn_left"
+    ]
+   }
+  ]
+ },
+ "10a887a1-7e72-4082-9cdb-da4726ddbfdf": {
+  "dur": 19.899801,
+  "episodes": [
+   {
+    "t0": 6.4,
+    "t1": 12.6,
+    "arc": [
+     "decelerate",
+     "stop",
+     "accelerate"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   }
+  ]
+ },
+ "10c4b1e4-9e7d-488e-a5ff-e0892280867d": {
+  "dur": 19.899987,
+  "episodes": []
+ },
+ "10c5bde2-4723-485d-8e01-47fc01570168": {
+  "dur": 19.800017,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 1.4,
+    "arc": [
+     "accelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 4.4,
+    "t1": 7.9,
+    "arc": [
+     "turn_right",
+     "decelerate"
+    ],
+    "ego_action": "ego_turn_right",
+    "auto": [
+     "turn_right"
+    ]
+   }
+  ]
+ },
+ "10f03064-ef31-4f04-8f4c-29b9a6ff34d6": {
+  "dur": 19.899896,
+  "episodes": []
+ },
+ "110c2503-b1db-4873-a03d-6bae02a06781": {
+  "dur": 19.900025,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 4.7,
+    "arc": [
+     "turn_right",
+     "accelerate"
+    ],
+    "ego_action": "ego_turn_right",
+    "auto": [
+     "turn_right"
+    ]
+   }
+  ]
+ },
+ "11764216-0e66-409f-ba30-0aba9e2e4205": {
+  "dur": 19.899926,
+  "episodes": []
+ },
+ "117b5e6f-7f10-42d6-a176-dd5b2a50764e": {
+  "dur": 19.900044,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 9.2,
+    "arc": [
+     "stop",
+     "accelerate"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   },
+   {
+    "t0": 13.0,
+    "t1": 19.9,
+    "arc": [
+     "decelerate",
+     "stop"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   }
+  ]
+ },
+ "11a1def8-d48b-457c-83c3-94b54a59fe6d": {
+  "dur": 19.999928,
+  "episodes": [
+   {
+    "t0": 1.8,
+    "t1": 8.5,
+    "arc": [
+     "decelerate",
+     "accelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   }
+  ]
+ },
+ "11a1f073-14e8-4ed1-944a-db9fe3fde951": {
+  "dur": 20.000017,
+  "episodes": [
+   {
+    "t0": 12.7,
+    "t1": 20.0,
+    "arc": [
+     "decelerate",
+     "stop"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   }
+  ]
+ },
+ "11e1e98f-e244-47b0-a545-26173a8e11fb": {
+  "dur": 19.899799,
+  "episodes": [
+   {
+    "t0": 3.6,
+    "t1": 18.1,
+    "arc": [
+     "decelerate",
+     "stop",
+     "accelerate"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   }
+  ]
+ },
+ "11ecff95-7481-43e3-b47a-1647565253a0": {
+  "dur": 19.899681,
+  "episodes": [
+   {
+    "t0": 0.0,
+    "t1": 1.1,
+    "arc": [
+     "accelerate"
+    ],
+    "ego_action": "ego_lane_keep",
+    "auto": []
+   },
+   {
+    "t0": 3.3,
+    "t1": 19.9,
+    "arc": [
+     "decelerate",
+     "decelerate",
+     "stop"
+    ],
+    "ego_action": "ego_stop",
+    "auto": [
+     "stop"
+    ]
+   }
+  ]
+ },
+ "120db5db-56d4-43b5-9453-396b9c82fb7d": {
+  "dur": 19.900402,
+  "episodes": [
+   {
+    "t0": 2.0,
+    "t1": 9.1,
+    "arc": [
+     "turn_right",
+     "decelerate"
+    ],
+    "ego_action": "ego_turn_right",
+    "auto": [
+     "turn_right"
+    ]
+   }
+  ]
+ }
+}
