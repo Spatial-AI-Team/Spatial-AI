@@ -52,7 +52,8 @@
       "Bash(curl -s -X POST http://localhost:8001/v1/tokenize -H \"Content-Type: application/json\" -d '{\"model\":\"nvidia/cosmos3-nano-reasoner\",\"prompt\":\"turn_left_onset\"}')",
       "Bash(curl -s http://localhost:8001/openapi.json)",
       "Bash(docker exec *)",
-      "Bash(nvidia-smi *)"
+      "Bash(nvidia-smi *)",
+      "Bash(cd *)"
     ]
   }
 }

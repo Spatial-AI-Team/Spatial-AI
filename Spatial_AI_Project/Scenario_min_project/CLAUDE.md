@@ -264,6 +264,7 @@ S3 인과 귀속   VLM → 원인 집합 확정, 신뢰도
 - 임시 산출물은 `$CLAUDE_JOB_DIR/tmp`
 - 막히면 진행을 멈추고 블로커 리포트를 남긴다
 - 설계 변경은 `decisions/DESIGN_LOG`에 기록
+- 파이프라인 구조 변경(단계·파일 대응, 제품 동작 상태, clip 세트 가용성 등)은 `README.md`도 함께 갱신
 
 ## 에이전트 위임 (`docs/design/AGENT_DESIGN.md` 정본, 2026-09-09 반영)
 

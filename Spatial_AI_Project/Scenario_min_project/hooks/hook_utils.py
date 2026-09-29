@@ -20,6 +20,9 @@ GOLD_FILE     = "gold.json"                                       # 최상위 go
 GOLD_ALLOWED  = ["task_selection/review.py", "task_episode/gold_tool.py",
                  "task_episode/extract_s0_validation.py",
                  "task_episode/extract_vis100_gold.py",
+                 "task_episode/run_pipeline.py", "verification/score_gold.py",
+                 ".claude/settings.local.json"]  # 도구 권한 허용목록(curl 검증 명령 텍스트에
+                 # gold_label/ 경로 문자열이 우연히 포함 — 데이터 소비 아님, 2026-09-22
                  "task_episode/run_pipeline.py", "verification/score_gold.py"]
 # 위 목록: gold_label/ 이 실제 gold 정답(gold.json, sample_clips/episodes.json)과
 # Stage1/Stage2 일반 산출물 저장 위치를 겸하고 있어(이 저장소 관행) 함께 걸림 — 전부
